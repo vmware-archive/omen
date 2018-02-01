@@ -1,0 +1,19 @@
+---
+platform: linux
+
+image_resource:
+  type: docker-image
+  source:
+    repository: golang
+    tag: 1.9
+
+inputs:
+  - name: opsman-snitch
+
+run:
+  path: opsman-snitch/ci/tests.sh
+
+params:
+  OPSMAN_PASSWORD: replaceme
+  OPSMAN_USERNAME: replaceme
+  OPSMAN_URL: replaceme

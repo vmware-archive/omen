@@ -1,0 +1,106 @@
+{
+  "installation_name": "cf-4f9edbd1992fd81250e5",
+  "guid": "guid",
+  "type": "cf",
+  "networks_and_azs": {
+    "networks_and_azs": {
+      "network": {
+        "name": "ert-network"
+      },
+      "other_availability_zones": [
+        {
+          "name": "us-central1-a"
+        },
+        {
+          "name": "us-central1-b"
+        },
+        {
+          "name": "us-central1-c"
+        }
+      ],
+      "singleton_availability_zone": {
+        "name": "us-central1-a"
+      }
+    }
+  },
+  "errands": {
+    "errands": [
+      {
+        "name": "smoke-tests",
+        "post_deploy": true
+      },
+      {
+        "name": "push-usage-service",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "push-apps-manager",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "notifications",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "notifications-ui",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "push-pivotal-account",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "autoscaling",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "autoscaling-register-broker",
+        "post_deploy": "when-changed"
+      },
+      {
+        "name": "nfsbrokerpush",
+        "post_deploy": "when-changed"
+      }
+    ]
+  },
+  "properties": {
+    "properties": {
+      ".properties.cc_api_rate_limit": {
+        "configurable": true,
+        "credential": false,
+        "optional": false,
+        "type": "selector",
+        "value": "disable"
+      },
+      ".properties.cc_api_rate_limit.enable.general_limit": {
+        "configurable": true,
+        "credential": false,
+        "optional": false,
+        "type": "integer",
+        "value": 2000
+      }
+    }
+  },
+  "resources": {
+    "resources": [
+      {
+        "description": "",
+        "identifier": "consul_server",
+        "instance_type_best_fit": "micro",
+        "instance_type_id": "",
+        "instances": 1,
+        "instances_best_fit": 3,
+        "persistent_disk_best_fit": 1024,
+        "persistent_disk_mb": 1024
+      },
+      {
+        "description": "Acts as the Pivotal CF Elastic Runtime message bus",
+        "identifier": "nats",
+        "instance_type_best_fit": "micro",
+        "instance_type_id": "",
+        "instances": 1,
+        "instances_best_fit": 2
+      }
+    ]
+  }
+}

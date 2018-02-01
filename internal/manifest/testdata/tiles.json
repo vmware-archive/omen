@@ -1,0 +1,14 @@
+[
+  {
+    "installation_name": "cf-4f9edbd1992fd81250e5",
+    "guid": "guid",
+    "type": "cf",
+    "product_version": "1.12.0.0"
+  },
+  {
+    "installation_name": "p-bosh-4f9edbd1992fd81250e5",
+    "guid": "p-bosh-guid",
+    "type": "p-bosh",
+    "product_version": "1.1"
+  }
+]

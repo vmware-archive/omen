@@ -1,0 +1,10 @@
+{
+  "cloud_config": {
+    "azs": [],
+    "networks": [],
+    "vm_types": [],
+    "disk_types": [],
+    "compilation": {},
+    "vm_extensions": []
+  }
+}

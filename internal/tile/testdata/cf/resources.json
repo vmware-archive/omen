@@ -1,0 +1,22 @@
+{
+  "resources": [
+    {
+      "identifier": "consul_server",
+      "description": "",
+      "instances": 1,
+      "instances_best_fit": 3,
+      "instance_type_id": "",
+      "instance_type_best_fit": "micro",
+      "persistent_disk_mb": 1024,
+      "persistent_disk_best_fit": 1024
+    },
+    {
+      "identifier": "nats",
+      "description": "Acts as the Pivotal CF Elastic Runtime message bus",
+      "instances": 1,
+      "instances_best_fit": 2,
+      "instance_type_id": "",
+      "instance_type_best_fit": "micro"
+    }
+  ]
+}

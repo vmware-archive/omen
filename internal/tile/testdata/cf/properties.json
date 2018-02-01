@@ -1,0 +1,18 @@
+{
+  "properties": {
+    ".properties.cc_api_rate_limit": {
+      "type": "selector",
+      "configurable": true,
+      "credential": false,
+      "value": "disable",
+      "optional": false
+    },
+    ".properties.cc_api_rate_limit.enable.general_limit": {
+      "type": "integer",
+      "configurable": true,
+      "credential": false,
+      "value": 2000,
+      "optional": false
+    }
+  }
+}

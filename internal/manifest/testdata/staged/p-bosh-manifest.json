@@ -1,0 +1,28 @@
+{
+  "manifest": {
+    "name": "p-bosh-guid",
+    "releases": [
+      {
+        "something": "foo"
+      }
+    ],
+    "stemcells": [
+      {
+        "something": "foo"
+      }
+    ],
+    "instance_groups": [
+      {
+        "something": "foo"
+      }
+    ],
+    "update": {
+      "something": "foo"
+    },
+    "variables": [
+      {
+        "something": "foo"
+      }
+    ]
+  }
+}
