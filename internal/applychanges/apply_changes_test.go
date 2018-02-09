@@ -26,6 +26,41 @@ var _ = Describe("Apply Changes - Execute", func() {
 		postedBody = ""
 	})
 
+	It("Applies all changes by default", func() {
+		manifests := manifest.Manifests{}
+
+		mloader := fakes.FakeManifestsLoader{
+			StagedResponseFunc: func() (manifest.Manifests, error) {
+				return manifests, nil
+			},
+			DeployedResponseFunc: func() (manifest.Manifests, error) {
+				return manifests, nil
+			},
+		}
+
+		applychanges.Execute(mloader, mockClient, "", true)
+
+		Expect(postedURL).To(Equal("/api/v0/installations"))
+		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+	})
+
+	It("Selectively applies changes to specified products", func() {
+		manifests := manifest.Manifests{}
+		mloader := fakes.FakeManifestsLoader{
+			StagedResponseFunc: func() (manifest.Manifests, error) {
+				return manifests, nil
+			},
+			DeployedResponseFunc: func() (manifest.Manifests, error) {
+				return manifests, nil
+			},
+		}
+
+		applychanges.Execute(mloader, mockClient, "product1,product2", true)
+
+		Expect(postedURL).To(Equal("/api/v0/installations"))
+		Expect(postedBody).To(ContainSubstring(`"deploy_products": "product1,product2"`))
+	})
+
 	It("Applies changes with no diff", func() {
 		manifests := manifest.Manifests{}
 
@@ -38,10 +73,10 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, true)
+		applychanges.Execute(mloader, mockClient, "", true)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(Equal(applychanges.APPLY_CHANGES_BODY))
+		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
 	})
 
 	It("Applies changes with diff", func() {
@@ -69,9 +104,9 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, true)
+		applychanges.Execute(mloader, mockClient, "", true)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(Equal(applychanges.APPLY_CHANGES_BODY))
+		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
 	})
 })

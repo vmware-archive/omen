@@ -11,7 +11,7 @@ import (
 
 const APPLY_CHANGES_BODY = `{
     "ignore_warnings": true,
-    "deploy_products": "all"
+    "deploy_products": "%s"
 }`
 
 type manifestsLoader interface {
@@ -23,7 +23,7 @@ type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, c opsmanClient, nonInteractive bool) {
+func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bool) {
 	mDiff := printDiff(ml)
 
 	if len(mDiff) <= 0 {
@@ -41,13 +41,19 @@ func Execute(ml manifestsLoader, c opsmanClient, nonInteractive bool) {
 		fmt.Println("Applying changes")
 	}
 
-	resp, err := c.Post("/api/v0/installations", APPLY_CHANGES_BODY, 10*time.Minute)
+	if len(prods) == 0 {
+		prods = "all"
+	}
+
+	body := fmt.Sprintf(APPLY_CHANGES_BODY, prods)
+
+	resp, err := c.Post("/api/v0/installations", body, 10*time.Minute)
 	if err != nil {
 		fmt.Printf("An error occurred applying changes: %v \n", err)
 		return
 	}
 
-	fmt.Printf("Successfully applied changes: %v \n", resp)
+	fmt.Printf("Successfully applied changes: %s \n", string(resp))
 }
 
 func printDiff(ml manifestsLoader) string {
