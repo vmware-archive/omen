@@ -82,11 +82,3 @@ func getOpsmanClient() opsman.Client {
 
 	return opsman.NewClient(url, user, secret)
 }
-
-func printReport(report string, err error) {
-	if err != nil {
-		fmt.Println(err.Error())
-		os.Exit(1)
-	}
-	fmt.Println(report)
-}

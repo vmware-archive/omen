@@ -3,6 +3,7 @@ package cmd
 import (
 	"time"
 
+	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 )
 
@@ -12,6 +13,6 @@ var diagnosticsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := getOpsmanClient()
 		report, err := client.Get("/api/v0/diagnostic_report", 10*time.Minute)
-		printReport(string(report), err)
+		userio.PrintReport(string(report), err)
 	},
 }

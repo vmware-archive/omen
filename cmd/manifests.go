@@ -5,6 +5,7 @@ import (
 
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 )
 
@@ -18,14 +19,14 @@ var manifestsCmd = &cobra.Command{
 
 		manifests, err := manifestLoader.LoadDeployed()
 		if err != nil {
-			printReport("", err)
+			userio.PrintReport("", err)
 		}
 
 		bytes, err := json.MarshalIndent(manifests, "", " ")
 		if err != nil {
-			printReport("", err)
+			userio.PrintReport("", err)
 		}
 
-		printReport(string(bytes), nil)
+		userio.PrintReport(string(bytes), nil)
 	},
 }

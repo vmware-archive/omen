@@ -1,8 +1,8 @@
-package user_io
+package userio
 
 import (
-	"fmt"
 	"bufio"
+	"fmt"
 	"os"
 	"strings"
 )

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 )
 
@@ -22,12 +23,12 @@ var stagedTilesCmd = &cobra.Command{
 
 		tiles, err := tileLoader.LoadStaged(true)
 		if err != nil {
-			printReport("", err)
+			userio.PrintReport("", err)
 		}
 
 		err = tiles.Write(output_dir)
 		if err != nil {
-			printReport("", err)
+			userio.PrintReport("", err)
 		}
 
 		fmt.Println("tiles written to", output_dir)
