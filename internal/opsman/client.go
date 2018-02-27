@@ -15,10 +15,12 @@ type Client struct {
 	baseUrl  string
 	username string
 	secret   string
+	clientID string
+	clientSecret string
 }
 
-func NewClient(baseUrl string, username string, secret string) Client {
-	return Client{baseUrl, username, secret}
+func NewClient(baseUrl string, username, secret, client, client_secret string) Client {
+	return Client{baseUrl, username, secret, client, client_secret}
 }
 
 func (c Client) execute(method string, endpoint string, data string, timeout time.Duration) ([]byte, error) {
@@ -30,8 +32,8 @@ func (c Client) execute(method string, endpoint string, data string, timeout tim
 		c.baseUrl,
 		c.username,
 		c.secret,
-		"",
-		"",
+		c.clientID,
+		c.clientSecret,
 		true,
 		false,
 		t,

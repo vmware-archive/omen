@@ -1,4 +1,4 @@
-package acceptance_tests
+package integration
 
 import (
 	"os/exec"
@@ -12,9 +12,8 @@ import (
 	"github.com/onsi/gomega/gexec"
 )
 
-var _ = Describe("omen", func() {
+var _ = Describe("omen integration", func() {
 	var session *gexec.Session
-	validUsername := os.Getenv("OPSMAN_USER")
 	opsManagerTimeOut := "120s"
 
 	It("should print diagnostic information", func() {
@@ -56,17 +55,5 @@ var _ = Describe("omen", func() {
 		Expect(err).ToNot(HaveOccurred())
 		Eventually(func() string { return string(session.Out.Contents()) }, opsManagerTimeOut).Should(ContainSubstring("Bad credentials"))
 		Eventually(session, opsManagerTimeOut).Should(Not(gexec.Exit(0)))
-	})
-
-	It("should print an error and exit with nonzero value if no command parameter", func() {
-		command := exec.Command(pathToOmenCLI, "-u="+validUsername)
-		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
-		Eventually(session, opsManagerTimeOut).Should(gexec.Exit(1))
-	})
-
-	It("should print an error and exit with nonzero value if command parameter is not recognised", func() {
-		command := exec.Command(pathToOmenCLI, "-u="+validUsername, "thisIsNotCommand")
-		session, err = gexec.Start(command, GinkgoWriter, GinkgoWriter)
-		Eventually(session, opsManagerTimeOut).Should(gexec.Exit(1))
 	})
 })
