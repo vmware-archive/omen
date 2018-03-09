@@ -21,6 +21,12 @@ var _ = Describe("Apply Changes - Execute", func() {
 		},
 	}
 
+	defReportPrinter := fakes.FakeReportPrinter{
+		FakeReportFunc: func(string, error) {
+			return
+		},
+	}
+
 	BeforeEach(func() {
 		postedURL = ""
 		postedBody = ""
@@ -38,7 +44,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, "", true)
+		applychanges.Execute(mloader, mockClient, "", true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -55,13 +61,13 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, "product1,product2", true)
+		applychanges.Execute(mloader, mockClient, "product1,product2", true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "product1,product2"`))
 	})
 
-	It("Applies changes with no diff", func() {
+	It("Applies changes with no difference between staged and deployed", func() {
 		manifests := manifest.Manifests{}
 
 		mloader := fakes.FakeManifestsLoader{
@@ -73,23 +79,23 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, "", true)
+		applychanges.Execute(mloader, mockClient, "", true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
 	})
 
-	It("Applies changes with diff", func() {
+	It("Applies changes with difference between staged and deployed", func() {
 		stagedManifests := manifest.Manifests{
 			Data: []manifest.Manifest{
-				manifest.Manifest{
+				{
 					Name: "staged",
 				},
 			},
 		}
 		deployedManifests := manifest.Manifests{
 			Data: []manifest.Manifest{
-				manifest.Manifest{
+				{
 					Name: "deployed",
 				},
 			},
@@ -104,7 +110,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, "", true)
+		applychanges.Execute(mloader, mockClient, "", true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))

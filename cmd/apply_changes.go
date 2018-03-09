@@ -9,7 +9,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var non_interactive bool
+var nonInteractive bool
 var products string
 
 var applyChangesCmd = &cobra.Command{
@@ -23,7 +23,7 @@ func init() {
 	applyChangesCmd.Flags().StringVarP(&products, "products", "P", "all",
 		`Optional flag to set the products to apply changes for (e.g. "product-1" or "product-1,product-2")`)
 
-	applyChangesCmd.Flags().BoolVarP(&non_interactive, "non-interactive", "n", false,
+	applyChangesCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "n", false,
 		"Set to true to skip user confirmation for apply change")
 }
 
@@ -33,5 +33,5 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	ml := manifest.NewManifestsLoader(c, tl)
 
 	fmt.Println("Applying changes to these products:", products)
-	applychanges.Execute(ml, c, products, non_interactive)
+	applychanges.Execute(ml, c, products, nonInteractive, rp)
 }

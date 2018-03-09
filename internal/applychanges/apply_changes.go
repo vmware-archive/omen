@@ -19,12 +19,16 @@ type manifestsLoader interface {
 	LoadDeployed() (manifest.Manifests, error)
 }
 
+type reportPrinter interface {
+	PrintReport(report string, err error)
+}
+
 type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bool) {
-	mDiff := printDiff(ml)
+func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bool, rp reportPrinter) {
+	mDiff := printDiff(ml, rp)
 
 	if len(mDiff) <= 0 {
 		fmt.Println("Warning: Opsman has detected no pending changes")
@@ -56,23 +60,23 @@ func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bo
 	fmt.Printf("Successfully applied changes: %s \n", string(resp))
 }
 
-func printDiff(ml manifestsLoader) string {
+func printDiff(ml manifestsLoader, rp reportPrinter) string {
 	manifestA, err := ml.LoadDeployed()
 	if err != nil {
-		userio.PrintReport("", err)
+		rp.PrintReport("", err)
 	}
 
 	manifestB, err := ml.LoadStaged()
 	if err != nil {
-		userio.PrintReport("", err)
+		rp.PrintReport("", err)
 	}
 
 	d, err := diff.FlatDiff(manifestA, manifestB)
 	if err != nil {
-		userio.PrintReport("", err)
+		rp.PrintReport("", err)
 	}
 
-	userio.PrintReport(d, nil)
+	rp.PrintReport(d, nil)
 
 	return d
 }

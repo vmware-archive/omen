@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/opsman"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/pivotal-cloudops/omen/internal/userio"
 )
 
 const (
@@ -16,6 +17,8 @@ const (
 	ENV_OPSMAN_CLIENT_ID     = "OPSMAN_CLIENT_ID"
 	ENV_OPSMAN_CLIENT_SECRET = "OPSMAN_CLIENT_SECRET"
 )
+
+var rp = userio.ReportPrinter{}
 
 var rootCmd = &cobra.Command{
 	Use:   "omen",
