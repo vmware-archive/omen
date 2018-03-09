@@ -1,6 +1,6 @@
 {
   "manifest": {
-    "name": "p-bosh-guid",
+    "name": "p-bosh",
     "releases": [
       {
         "something": "foo"

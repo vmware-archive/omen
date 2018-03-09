@@ -5,7 +5,7 @@ import (
 	"os"
 )
 
-type ReportPrinter struct {}
+type ReportPrinter struct{}
 
 func (rp ReportPrinter) PrintReport(report string, err error) {
 	if err != nil {

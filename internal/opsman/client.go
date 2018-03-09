@@ -12,10 +12,10 @@ import (
 )
 
 type Client struct {
-	baseUrl  string
-	username string
-	secret   string
-	clientID string
+	baseUrl      string
+	username     string
+	secret       string
+	clientID     string
 	clientSecret string
 }
 

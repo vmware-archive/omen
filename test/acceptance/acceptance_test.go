@@ -1,10 +1,11 @@
 package acceptance
 
 import (
+	"os/exec"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
-	"os/exec"
 )
 
 var _ = Describe("omen acceptance", func() {

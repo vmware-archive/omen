@@ -36,10 +36,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		manifests := manifest.Manifests{}
 
 		mloader := fakes.FakeManifestsLoader{
-			StagedResponseFunc: func() (manifest.Manifests, error) {
-				return manifests, nil
-			},
-			DeployedResponseFunc: func() (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
@@ -53,10 +50,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 	It("Selectively applies changes to specified products", func() {
 		manifests := manifest.Manifests{}
 		mloader := fakes.FakeManifestsLoader{
-			StagedResponseFunc: func() (manifest.Manifests, error) {
-				return manifests, nil
-			},
-			DeployedResponseFunc: func() (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
@@ -71,10 +65,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		manifests := manifest.Manifests{}
 
 		mloader := fakes.FakeManifestsLoader{
-			StagedResponseFunc: func() (manifest.Manifests, error) {
-				return manifests, nil
-			},
-			DeployedResponseFunc: func() (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
@@ -102,11 +93,11 @@ var _ = Describe("Apply Changes - Execute", func() {
 		}
 
 		mloader := fakes.FakeManifestsLoader{
-			StagedResponseFunc: func() (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
+				if status == manifest.DEPLOYED {
+					return deployedManifests, nil
+				}
 				return stagedManifests, nil
-			},
-			DeployedResponseFunc: func() (manifest.Manifests, error) {
-				return deployedManifests, nil
 			},
 		}
 
@@ -114,5 +105,42 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+	})
+
+	It("Prints out the the diff between all staged and deployed tiles", func() {
+		stagedManifests := manifest.Manifests{
+			Data: []manifest.Manifest{
+				{
+					Name: "staged",
+				},
+			},
+		}
+		deployedManifests := manifest.Manifests{
+			Data: []manifest.Manifest{
+				{
+					Name: "deployed",
+				},
+			},
+		}
+
+		mloader := fakes.FakeManifestsLoader{
+			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
+				if status == manifest.DEPLOYED {
+					return deployedManifests, nil
+				}
+				return stagedManifests, nil
+			},
+		}
+
+		var diff string
+		rp := fakes.FakeReportPrinter{
+			FakeReportFunc: func(s string, e error) {
+				diff = s
+			},
+		}
+
+		applychanges.Execute(mloader, mockClient, "", true, rp)
+
+		Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 	})
 })

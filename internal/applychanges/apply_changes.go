@@ -15,8 +15,8 @@ const APPLY_CHANGES_BODY = `{
 }`
 
 type manifestsLoader interface {
-	LoadStaged() (manifest.Manifests, error)
-	LoadDeployed() (manifest.Manifests, error)
+	LoadAll(status manifest.ProductStatus) (manifest.Manifests, error)
+	Load(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error)
 }
 
 type reportPrinter interface {
@@ -61,12 +61,12 @@ func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bo
 }
 
 func printDiff(ml manifestsLoader, rp reportPrinter) string {
-	manifestA, err := ml.LoadDeployed()
+	manifestA, err := ml.LoadAll(manifest.DEPLOYED)
 	if err != nil {
 		rp.PrintReport("", err)
 	}
 
-	manifestB, err := ml.LoadStaged()
+	manifestB, err := ml.LoadAll(manifest.STAGED)
 	if err != nil {
 		rp.PrintReport("", err)
 	}

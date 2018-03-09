@@ -16,7 +16,7 @@ var manifestsCmd = &cobra.Command{
 		tileLoader := tile.NewTilesLoader(client)
 		manifestLoader := manifest.NewManifestsLoader(client, tileLoader)
 
-		manifests, err := manifestLoader.LoadDeployed()
+		manifests, err := manifestLoader.LoadAll(manifest.DEPLOYED)
 		if err != nil {
 			rp.PrintReport("", err)
 		}

@@ -5,8 +5,8 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"testing"
 	"os"
+	"testing"
 )
 
 func TestOpsmanSnitch(t *testing.T) {

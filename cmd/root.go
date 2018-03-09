@@ -5,9 +5,9 @@ import (
 	"os"
 
 	"github.com/pivotal-cloudops/omen/internal/opsman"
+	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/pivotal-cloudops/omen/internal/userio"
 )
 
 const (
@@ -113,8 +113,6 @@ func getOpsmanClient() opsman.Client {
 			os.Exit(1)
 		}
 	}
-
-
 
 	return opsman.NewClient(url, user, secret, clientID, clientSecret)
 }
