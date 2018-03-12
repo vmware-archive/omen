@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
+	"strings"
 )
 
 var nonInteractive bool
@@ -20,7 +21,7 @@ var applyChangesCmd = &cobra.Command{
 }
 
 func init() {
-	applyChangesCmd.Flags().StringVarP(&products, "products", "P", "all",
+	applyChangesCmd.Flags().StringVarP(&products, "products", "P", "",
 		`Optional flag to set the products to apply changes for (e.g. "product-1" or "product-1,product-2")`)
 
 	applyChangesCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "n", false,
@@ -32,6 +33,16 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	tl := tile.NewTilesLoader(c)
 	ml := manifest.NewManifestsLoader(c, tl)
 
-	fmt.Println("Applying changes to these products:", products)
-	applychanges.Execute(ml, c, products, nonInteractive, rp)
+	var guids []string
+	if len(products) == 0 {
+		fmt.Println("Applying changes to all products")
+	} else {
+		fmt.Println("Applying changes to these products:", products)
+		products = strings.TrimSpace(products)
+		fmt.Println("products: " + products)
+		for _, s := range strings.Split(products, ",") {
+			guids = append(guids, strings.TrimSpace(s))
+		}
+	}
+	applychanges.Execute(ml, c, guids, nonInteractive, rp)
 }

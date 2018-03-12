@@ -1,0 +1,4 @@
+-manifests.product1.name=product1
+-manifests.product2.name=product2
++manifests.staged-product1.name=staged-product1
++manifests.staged-product2.name=staged-product2

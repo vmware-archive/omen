@@ -7,6 +7,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/diff"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/userio"
+	"strings"
 )
 
 const APPLY_CHANGES_BODY = `{
@@ -27,8 +28,13 @@ type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bool, rp reportPrinter) {
-	mDiff := printDiff(ml, rp)
+func Execute(ml manifestsLoader, c opsmanClient, tileGuids []string, nonInteractive bool, rp reportPrinter) {
+	mDiff, err := printDiff(ml, tileGuids, rp)
+
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
 
 	if len(mDiff) <= 0 {
 		fmt.Println("Warning: Opsman has detected no pending changes")
@@ -45,11 +51,12 @@ func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bo
 		fmt.Println("Applying changes")
 	}
 
-	if len(prods) == 0 {
-		prods = "all"
+	var body string
+	if len(tileGuids) == 0 {
+		body = fmt.Sprintf(APPLY_CHANGES_BODY, "all")
+	} else {
+		body = fmt.Sprintf(APPLY_CHANGES_BODY, strings.Join(tileGuids, ","))
 	}
-
-	body := fmt.Sprintf(APPLY_CHANGES_BODY, prods)
 
 	resp, err := c.Post("/api/v0/installations", body, 10*time.Minute)
 	if err != nil {
@@ -60,23 +67,40 @@ func Execute(ml manifestsLoader, c opsmanClient, prods string, nonInteractive bo
 	fmt.Printf("Successfully applied changes: %s \n", string(resp))
 }
 
-func printDiff(ml manifestsLoader, rp reportPrinter) string {
-	manifestA, err := ml.LoadAll(manifest.DEPLOYED)
-	if err != nil {
-		rp.PrintReport("", err)
+func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string, error) {
+	var (
+		manifestA manifest.Manifests
+		manifestB manifest.Manifests
+		err       error
+	)
+
+	if len(tileGuids) == 0 {
+		manifestA, err = ml.LoadAll(manifest.DEPLOYED)
+	} else {
+		manifestA, err = ml.Load(manifest.DEPLOYED, tileGuids)
 	}
 
-	manifestB, err := ml.LoadAll(manifest.STAGED)
 	if err != nil {
-		rp.PrintReport("", err)
+		return "", err
+	}
+
+	if len(tileGuids) == 0 {
+		manifestB, err = ml.LoadAll(manifest.STAGED)
+	} else {
+		manifestB, err = ml.Load(manifest.STAGED, tileGuids)
+	}
+
+	if err != nil {
+		return "", err
 	}
 
 	d, err := diff.FlatDiff(manifestA, manifestB)
+
 	if err != nil {
-		rp.PrintReport("", err)
+		return "", err
 	}
 
 	rp.PrintReport(d, nil)
 
-	return d
+	return d, err
 }
