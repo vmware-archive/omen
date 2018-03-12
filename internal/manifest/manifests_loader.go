@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"strings"
 )
 
 type ProductStatus string
@@ -106,7 +107,7 @@ func (l Loader) loadCloudConfig(status ProductStatus) (interface{}, error) {
 }
 
 func getEndpoint(tileGuid string, status ProductStatus) string {
-	if tileGuid == "p-bosh" {
+	if strings.HasPrefix(tileGuid, "p-bosh") {
 		return fmt.Sprintf("/api/v0/%s/director/manifest", status)
 	}
 	return fmt.Sprintf("/api/v0/%s/products/%s/manifest", status, tileGuid)
