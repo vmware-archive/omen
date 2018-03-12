@@ -92,6 +92,9 @@ var _ = Describe("Manifests loader", func() {
 			manifests, err := loader.Load(manifest.STAGED, []string{"guid"})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(manifests.Data)).To(Equal(1))
+
+			manifest := manifests.Data[0]
+			Expect(manifest.Name).To(Equal("guid"))
 		})
 	})
 
