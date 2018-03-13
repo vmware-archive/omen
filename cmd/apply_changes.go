@@ -39,7 +39,6 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	} else {
 		fmt.Println("Applying changes to these products:", products)
 		products = strings.TrimSpace(products)
-		fmt.Println("products: " + products)
 		for _, s := range strings.Split(products, ",") {
 			guids = append(guids, strings.TrimSpace(s))
 		}
