@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/network"
+	"github.com/pkg/errors"
 )
 
 type Client struct {
@@ -59,9 +60,11 @@ func (c Client) execute(method string, endpoint string, data string, timeout tim
 }
 
 func (c Client) Get(endpoint string, timeout time.Duration) ([]byte, error) {
-	return c.execute("GET", endpoint, "", timeout)
+	body, err := c.execute("GET", endpoint, "", timeout)
+	return body, errors.Wrap(err, string(body))
 }
 
 func (c Client) Post(endpoint, data string, timeout time.Duration) ([]byte, error) {
-	return c.execute("POST", endpoint, data, timeout)
+	body, err := c.execute("POST", endpoint, data, timeout)
+	return body, errors.Wrap(err, string(body))
 }

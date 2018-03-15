@@ -24,3 +24,7 @@
 [[constraint]]
   name = "github.com/pivotal-cf/om"
   version = "0.34.0"
+
+[[constraint]]
+  name = "github.com/pkg/errors"
+  version = "0.8.0"

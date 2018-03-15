@@ -162,6 +162,12 @@
   version = "0.34.0"
 
 [[projects]]
+  name = "github.com/pkg/errors"
+  packages = ["."]
+  revision = "645ef00459ed84a119197bfb8d8205042c6df63d"
+  version = "v0.8.0"
+
+[[projects]]
   name = "github.com/spf13/afero"
   packages = [
     ".",
@@ -258,12 +264,16 @@
 [[projects]]
   name = "google.golang.org/appengine"
   packages = [
+    ".",
     "internal",
+    "internal/app_identity",
     "internal/base",
     "internal/datastore",
     "internal/log",
+    "internal/modules",
     "internal/remote_api",
     "internal/urlfetch",
+    "log",
     "urlfetch"
   ]
   revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
@@ -278,6 +288,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "0085f14c2fae4b5734ff9615849560a485d65f18b0c3ea441a2c69fd09cf85df"
+  inputs-digest = "fc86cab2ccf6a14babb9b3a34e0b8f0a5d1004c338b53a18a1810de03b63ad3b"
   solver-name = "gps-cdcl"
   solver-version = 1
