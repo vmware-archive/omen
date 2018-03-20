@@ -126,7 +126,7 @@ var _ = Describe("Manifests loader", func() {
 
 	It("should fail if the tile loader returns an error", func() {
 		tl := fakes.FakeTilesLoader{
-			DeployedResponseFunc: func() (tile.Tiles, error) {
+			DeployedResponseFunc: func(_ bool) (tile.Tiles, error) {
 				return tile.Tiles{}, errors.New("oops")
 			},
 		}

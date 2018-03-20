@@ -5,14 +5,14 @@ import (
 )
 
 type FakeTilesLoader struct {
-	StagedResponseFunc   func() (tile.Tiles, error)
-	DeployedResponseFunc func() (tile.Tiles, error)
+	StagedResponseFunc   func(bool) (tile.Tiles, error)
+	DeployedResponseFunc func(bool) (tile.Tiles, error)
 }
 
-func (f FakeTilesLoader) LoadStaged(_ bool) (tile.Tiles, error) {
-	return f.StagedResponseFunc()
+func (f FakeTilesLoader) LoadStaged(fetchTileMetadata bool) (tile.Tiles, error) {
+	return f.StagedResponseFunc(fetchTileMetadata)
 }
 
-func (f FakeTilesLoader) LoadDeployed(_ bool) (tile.Tiles, error) {
-	return f.DeployedResponseFunc()
+func (f FakeTilesLoader) LoadDeployed(fetchTileMetadata bool) (tile.Tiles, error) {
+	return f.DeployedResponseFunc(fetchTileMetadata)
 }
