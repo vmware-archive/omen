@@ -12,6 +12,7 @@ import (
 	"errors"
 	"io/ioutil"
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var _ = Describe("Apply Changes - Execute", func() {
@@ -40,7 +41,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		manifests := manifest.Manifests{}
 
 		mloader := fakes.FakeManifestsLoader{
-			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
@@ -57,7 +58,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		manifests := manifest.Manifests{}
 
 		mloader := fakes.FakeManifestsLoader{
-			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
+			LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
@@ -89,8 +90,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		tloader := fakes.FakeTilesLoader{}
 
 		mloader := fakes.FakeManifestsLoader{
-			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
-				if status == manifest.DEPLOYED {
+			LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
+				if status == common.DEPLOYED {
 					return deployedManifests, nil
 				}
 				return stagedManifests, nil
@@ -120,8 +121,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		}
 
 		mloader := fakes.FakeManifestsLoader{
-			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
-				if status == manifest.DEPLOYED {
+			LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
+				if status == common.DEPLOYED {
 					return deployedManifests, nil
 				}
 				return stagedManifests, nil
@@ -147,7 +148,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			fetchTileMetadata := true
 			manifests := manifest.Manifests{}
 			mloader := fakes.FakeManifestsLoader{
-				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+				LoadResponseFunc: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifests, nil
 				},
 			}
@@ -179,7 +180,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		It("fails when slug not found", func() {
 			mloader := fakes.FakeManifestsLoader{
-				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+				LoadResponseFunc: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifest.Manifests{}, nil
 				},
 			}
@@ -209,7 +210,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		It("fails when tile loading fails", func() {
 			mloader := fakes.FakeManifestsLoader{
-				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+				LoadResponseFunc: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifest.Manifests{}, nil
 				},
 			}
@@ -231,12 +232,12 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 			mloader := fakes.FakeManifestsLoader{
 
-				LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
+				LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
 					return manifest.Manifests{}, errors.New("loadAll should not be called")
 				},
 
-				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					if status == manifest.DEPLOYED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
+				LoadResponseFunc: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+					if status == common.DEPLOYED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{
@@ -249,7 +250,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 						}, nil
 					}
 
-					if status == manifest.STAGED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
+					if status == common.STAGED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{

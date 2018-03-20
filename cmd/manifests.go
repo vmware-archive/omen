@@ -6,6 +6,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var manifestsCmd = &cobra.Command{
@@ -16,7 +17,7 @@ var manifestsCmd = &cobra.Command{
 		tileLoader := tile.NewTilesLoader(client)
 		manifestLoader := manifest.NewManifestsLoader(client, tileLoader)
 
-		manifests, err := manifestLoader.LoadAll(manifest.DEPLOYED)
+		manifests, err := manifestLoader.LoadAll(common.DEPLOYED)
 		if err != nil {
 			rp.PrintReport("", err)
 		}

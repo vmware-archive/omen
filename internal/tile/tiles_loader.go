@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 type omClient interface {
@@ -19,14 +20,14 @@ func NewTilesLoader(omClient omClient) Loader {
 }
 
 func (l Loader) LoadStaged(fetchTileMetadata bool) (Tiles, error) {
-	return l.load(fetchTileMetadata, "staged")
+	return l.load(fetchTileMetadata, common.STAGED)
 }
 
 func (l Loader) LoadDeployed(fetchTileMetadata bool) (Tiles, error) {
-	return l.load(fetchTileMetadata, "deployed")
+	return l.load(fetchTileMetadata, common.DEPLOYED)
 }
 
-func (l Loader) load(fetchTileMetadata bool, status string) (Tiles, error) {
+func (l Loader) load(fetchTileMetadata bool, status common.ProductStatus) (Tiles, error) {
 	b, err := l.client.Get(fmt.Sprintf("/api/v0/%s/products", status), 10*time.Minute)
 
 	if err != nil {
@@ -41,7 +42,7 @@ func (l Loader) load(fetchTileMetadata bool, status string) (Tiles, error) {
 
 	if fetchTileMetadata {
 		for _, d := range data {
-			err = l.loadTileMetadata(d)
+			err = l.loadTileMetadata(d, status)
 			if err != nil {
 				return Tiles{}, err
 			}
@@ -52,19 +53,19 @@ func (l Loader) load(fetchTileMetadata bool, status string) (Tiles, error) {
 
 }
 
-func (l Loader) loadTileMetadata(t *Tile) error {
+func (l Loader) loadTileMetadata(t *Tile, status common.ProductStatus) error {
 	urlsToPointer := []struct {
 		url     string
 		pointer *map[string]interface{}
 	}{
-		{"/api/v0/staged/products/%s/networks_and_azs", &t.Networks},
-		{"/api/v0/staged/products/%s/errands", &t.Errands},
-		{"/api/v0/staged/products/%s/resources", &t.Resources},
-		{"/api/v0/staged/products/%s/properties", &t.Properties},
+		{"/api/v0/%s/products/%s/networks_and_azs", &t.Networks},
+		{"/api/v0/%s/products/%s/errands", &t.Errands},
+		{"/api/v0/%s/products/%s/resources", &t.Resources},
+		{"/api/v0/%s/products/%s/properties", &t.Properties},
 	}
 
 	for _, up := range urlsToPointer {
-		data, err := l.client.Get(fmt.Sprintf(up.url, t.GUID), 10*time.Minute)
+		data, err := l.client.Get(fmt.Sprintf(up.url, status, t.GUID), 10*time.Minute)
 		if err != nil {
 			return err
 		}

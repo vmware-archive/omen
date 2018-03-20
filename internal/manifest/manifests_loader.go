@@ -8,13 +8,7 @@ import (
 
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"strings"
-)
-
-type ProductStatus string
-
-const (
-	STAGED   ProductStatus = "staged"
-	DEPLOYED ProductStatus = "deployed"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 type omClient interface {
@@ -49,7 +43,7 @@ func NewManifestsLoader(omClient omClient, tl tilesLoader) Loader {
 	return Loader{client: omClient, tl: tl}
 }
 
-func (l Loader) LoadAll(status ProductStatus) (Manifests, error) {
+func (l Loader) LoadAll(status common.ProductStatus) (Manifests, error) {
 	tileGuids, err := l.getAllTileGuids(status)
 	if err != nil {
 		return Manifests{}, err
@@ -58,14 +52,14 @@ func (l Loader) LoadAll(status ProductStatus) (Manifests, error) {
 	return l.Load(status, tileGuids)
 }
 
-func (l Loader) getAllTileGuids(status ProductStatus) ([]string, error) {
+func (l Loader) getAllTileGuids(status common.ProductStatus) ([]string, error) {
 	var (
 		tiles  tile.Tiles
 		err    error
 		result []string
 	)
 
-	if status == DEPLOYED {
+	if status == common.DEPLOYED {
 		tiles, err = l.tl.LoadDeployed(false)
 	} else {
 		tiles, err = l.tl.LoadStaged(false)
@@ -82,7 +76,7 @@ func (l Loader) getAllTileGuids(status ProductStatus) ([]string, error) {
 	return result, err
 }
 
-func (l Loader) Load(status ProductStatus, tileGuids []string) (Manifests, error) {
+func (l Loader) Load(status common.ProductStatus, tileGuids []string) (Manifests, error) {
 	manifests, err := l.loadManifests(tileGuids, status)
 	if err != nil {
 		return Manifests{}, err
@@ -96,7 +90,7 @@ func (l Loader) Load(status ProductStatus, tileGuids []string) (Manifests, error
 	return Manifests{manifests, cloudConfig}, nil
 }
 
-func (l Loader) loadCloudConfig(status ProductStatus) (interface{}, error) {
+func (l Loader) loadCloudConfig(status common.ProductStatus) (interface{}, error) {
 	response, err := l.client.Get(fmt.Sprintf("/api/v0/%s/cloud_config", status), 10*time.Minute)
 	if err != nil {
 		return nil, err
@@ -106,14 +100,14 @@ func (l Loader) loadCloudConfig(status ProductStatus) (interface{}, error) {
 	return cloudConfig["cloud_config"], err
 }
 
-func getEndpoint(tileGuid string, status ProductStatus) string {
+func getEndpoint(tileGuid string, status common.ProductStatus) string {
 	if strings.HasPrefix(tileGuid, "p-bosh") {
 		return fmt.Sprintf("/api/v0/%s/director/manifest", status)
 	}
 	return fmt.Sprintf("/api/v0/%s/products/%s/manifest", status, tileGuid)
 }
 
-func (l Loader) loadManifests(tileGuids []string, status ProductStatus) ([]Manifest, error) {
+func (l Loader) loadManifests(tileGuids []string, status common.ProductStatus) ([]Manifest, error) {
 	var manifests []Manifest
 
 	for _, t := range tileGuids {
@@ -129,7 +123,7 @@ func (l Loader) loadManifests(tileGuids []string, status ProductStatus) ([]Manif
 
 		m = Manifest{}
 
-		if status == DEPLOYED {
+		if status == common.DEPLOYED {
 			err = json.Unmarshal(data, &m)
 			if err != nil {
 				return nil, err

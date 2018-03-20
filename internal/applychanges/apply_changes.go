@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/userio"
 	"strings"
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 const APPLY_CHANGES_BODY = `{
@@ -17,8 +18,8 @@ const APPLY_CHANGES_BODY = `{
 }`
 
 type manifestsLoader interface {
-	LoadAll(status manifest.ProductStatus) (manifest.Manifests, error)
-	Load(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error)
+	LoadAll(status common.ProductStatus) (manifest.Manifests, error)
+	Load(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error)
 }
 
 type tilesLoader interface {
@@ -107,9 +108,9 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 	)
 
 	if len(tileGuids) == 0 {
-		manifestA, err = ml.LoadAll(manifest.DEPLOYED)
+		manifestA, err = ml.LoadAll(common.DEPLOYED)
 	} else {
-		manifestA, err = ml.Load(manifest.DEPLOYED, tileGuids)
+		manifestA, err = ml.Load(common.DEPLOYED, tileGuids)
 	}
 
 	if err != nil {
@@ -117,9 +118,9 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 	}
 
 	if len(tileGuids) == 0 {
-		manifestB, err = ml.LoadAll(manifest.STAGED)
+		manifestB, err = ml.LoadAll(common.STAGED)
 	} else {
-		manifestB, err = ml.Load(manifest.STAGED, tileGuids)
+		manifestB, err = ml.Load(common.STAGED, tileGuids)
 	}
 
 	if err != nil {

@@ -11,9 +11,11 @@ import (
 
 	"github.com/kylelemons/godebug/pretty"
 	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cloudops/omen/internal/fakes"
 	"github.com/pivotal-cloudops/omen/internal/tile"
+	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var _ = Describe("Tiles Loader", func() {
@@ -66,20 +68,20 @@ var _ = Describe("Tiles Loader", func() {
 	})
 
 	Context("loading with metadata", func() {
-		It("should load", func() {
 
+		DescribeTable("should load", func(status common.ProductStatus) {
 			fakeOMClient := fakes.FakeOMClient{
 				GetFunc: func(endpoint string) ([]byte, error) {
 					switch endpoint {
-					case "/api/v0/staged/products":
+					case fmt.Sprintf("/api/v0/%s/products", status):
 						return ioutil.ReadFile("testdata/tiles.json")
-					case "/api/v0/staged/products/guid/networks_and_azs":
+					case fmt.Sprintf("/api/v0/%s/products/guid/networks_and_azs", status):
 						return ioutil.ReadFile("testdata/cf/networks_and_azs.json")
-					case "/api/v0/staged/products/guid/errands":
+					case fmt.Sprintf("/api/v0/%s/products/guid/errands", status):
 						return ioutil.ReadFile("testdata/cf/errands.json")
-					case "/api/v0/staged/products/guid/resources":
+					case fmt.Sprintf("/api/v0/%s/products/guid/resources", status):
 						return ioutil.ReadFile("testdata/cf/resources.json")
-					case "/api/v0/staged/products/guid/properties":
+					case fmt.Sprintf("/api/v0/%s/products/guid/properties", status):
 						return ioutil.ReadFile("testdata/cf/properties.json")
 					default:
 						return nil, errors.New(fmt.Sprintf("invalid endpoint %v", endpoint))
@@ -89,7 +91,20 @@ var _ = Describe("Tiles Loader", func() {
 
 			loader := tile.NewTilesLoader(fakeOMClient)
 
-			tiles, err := loader.LoadStaged(true)
+			var (
+				tiles tile.Tiles
+				err   error
+			)
+
+			switch status {
+			case common.STAGED:
+				tiles, err = loader.LoadStaged(true)
+			case common.DEPLOYED:
+				tiles, err = loader.LoadDeployed(true)
+			default:
+				err = errors.New("invalid product status")
+			}
+
 			Expect(err).NotTo(HaveOccurred())
 			data := tiles.Data
 			Expect(data).To(HaveLen(1))
@@ -102,7 +117,10 @@ var _ = Describe("Tiles Loader", func() {
 
 			diff := pretty.Compare(actualTile, expectedTile)
 			Expect(diff).To(BeEmpty())
-		})
+		},
+			Entry("staged", common.STAGED),
+			Entry("deployed", common.DEPLOYED))
+
 	})
 
 	It("should fail if fetching tiles fails", func() {
