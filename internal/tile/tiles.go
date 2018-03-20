@@ -29,7 +29,7 @@ func (t Tiles) FindBySlug(slug string) (Tile, error) {
 		}
 	}
 
-	return Tile{}, errors.New(fmt.Sprintf("slug %s not found", slug))
+	return Tile{}, errors.New(fmt.Sprintf("product %s not found", slug))
 }
 
 func (t Tiles) Write(path string) error {

@@ -82,7 +82,7 @@ var _ = Describe("Tiles", func() {
 			_, err := t.FindBySlug("tile-that-does-not-exist")
 
 			Expect(err).To(HaveOccurred())
-			Expect(err.Error()).To(Equal("slug tile-that-does-not-exist not found"))
+			Expect(err.Error()).To(Equal("product tile-that-does-not-exist not found"))
 		})
 	})
 })
