@@ -14,7 +14,7 @@ import (
 )
 
 var _ = Describe("Tiles", func() {
-	Context("#Write", func() {
+	Describe("#Write", func() {
 		It("writes out all the Tiles at the specified path", func() {
 			var t tile.Tile
 			f, err := ioutil.ReadFile("testdata/expected_tile.json")
@@ -49,6 +49,40 @@ var _ = Describe("Tiles", func() {
 				"properties.json",
 				"resources.json",
 			}))
+		})
+	})
+
+	Describe("FindBySlug", func() {
+		It("it finds the guid for the specified slug", func() {
+			t := tile.Tiles {
+				Data: []*tile.Tile {
+					{
+						GUID: "tile-1234",
+						Type: "tile",
+					},
+				},
+			}
+
+			ts, err := t.FindBySlug("tile")
+
+			Expect(err).To(Not(HaveOccurred()))
+			Expect(ts.GUID).To(Equal("tile-1234"))
+		})
+
+		It("returns an error when the tile is not found", func() {
+			t := tile.Tiles {
+				Data: []*tile.Tile {
+					{
+						GUID: "tile-1234",
+						Type: "tile",
+					},
+				},
+			}
+
+			_, err := t.FindBySlug("tile-that-does-not-exist")
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("slug tile-that-does-not-exist not found"))
 		})
 	})
 })

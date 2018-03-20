@@ -43,5 +43,5 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 			guids = append(guids, strings.TrimSpace(s))
 		}
 	}
-	applychanges.Execute(ml, c, guids, nonInteractive, rp)
+	applychanges.Execute(ml, tl, c, guids, nonInteractive, rp)
 }

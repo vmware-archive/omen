@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"os"
+	"github.com/pkg/errors"
+	"fmt"
 )
 
 type Tiles struct {
@@ -18,6 +20,16 @@ type Tile struct {
 	Errands          map[string]interface{} `json:"errands,omitempty"`
 	Properties       map[string]interface{} `json:"properties,omitempty"`
 	Resources        map[string]interface{} `json:"resources,omitempty"`
+}
+
+func (t Tiles) FindBySlug(slug string) (Tile, error) {
+	for _, t := range t.Data {
+		if t.Type == slug {
+			return *t, nil
+		}
+	}
+
+	return Tile{}, errors.New(fmt.Sprintf("slug %s not found", slug))
 }
 
 func (t Tiles) Write(path string) error {

@@ -11,6 +11,7 @@ import (
 	"reflect"
 	"errors"
 	"io/ioutil"
+	"github.com/pivotal-cloudops/omen/internal/tile"
 )
 
 var _ = Describe("Apply Changes - Execute", func() {
@@ -44,24 +45,12 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, []string{}, true, defReportPrinter)
+		tloader := fakes.FakeTilesLoader{}
+
+		applychanges.Execute(mloader, tloader, mockClient, []string{}, true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
-	})
-
-	It("Selectively applies changes to specified products", func() {
-		manifests := manifest.Manifests{}
-		mloader := fakes.FakeManifestsLoader{
-			LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-				return manifests, nil
-			},
-		}
-
-		applychanges.Execute(mloader, mockClient, []string{"product1", "product2"}, true, defReportPrinter)
-
-		Expect(postedURL).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(ContainSubstring(`"deploy_products": "product1,product2"`))
 	})
 
 	It("Applies changes with no difference between staged and deployed", func() {
@@ -73,7 +62,9 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, []string{}, true, defReportPrinter)
+		tloader := fakes.FakeTilesLoader{}
+
+		applychanges.Execute(mloader, tloader, mockClient, []string{}, true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -95,6 +86,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
+		tloader := fakes.FakeTilesLoader{}
+
 		mloader := fakes.FakeManifestsLoader{
 			LoadAllResponseFunc: func(status manifest.ProductStatus) (manifest.Manifests, error) {
 				if status == manifest.DEPLOYED {
@@ -104,7 +97,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, []string{}, true, defReportPrinter)
+		applychanges.Execute(mloader, tloader, mockClient, []string{}, true, defReportPrinter)
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -135,6 +128,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
+		tloader := fakes.FakeTilesLoader{}
+
 		var diff string
 		rp := fakes.FakeReportPrinter{
 			FakeReportFunc: func(s string, e error) {
@@ -142,12 +137,96 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, mockClient, []string{}, true, rp)
+		applychanges.Execute(mloader, tloader, mockClient, []string{}, true, rp)
 
 		Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 	})
 
 	Describe("selective tile deployments", func() {
+		It("applies changes to specified products", func() {
+			fetchTileMetadata := true
+			manifests := manifest.Manifests{}
+			mloader := fakes.FakeManifestsLoader{
+				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+					return manifests, nil
+				},
+			}
+
+			tloader := fakes.FakeTilesLoader{
+				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
+					fetchTileMetadata = b
+					return tile.Tiles{
+						Data: []*tile.Tile{
+							{
+								GUID: "guid1",
+								Type: "product1",
+							},
+							{
+								GUID: "guid2",
+								Type: "product2",
+							},
+						},
+					}, nil
+				},
+			}
+
+			applychanges.Execute(mloader, tloader, mockClient, []string{"product1", "product2"}, true, defReportPrinter)
+
+			Expect(fetchTileMetadata).To(BeFalse())
+			Expect(postedURL).To(Equal("/api/v0/installations"))
+			Expect(postedBody).To(ContainSubstring(`"deploy_products": "guid1,guid2"`))
+		})
+
+		It("fails when slug not found", func() {
+			mloader := fakes.FakeManifestsLoader{
+				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+					return manifest.Manifests{}, nil
+				},
+			}
+
+			tloader := fakes.FakeTilesLoader{
+				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
+					return tile.Tiles{
+						Data: []*tile.Tile{
+							{
+								GUID: "guid1",
+								Type: "product1",
+							},
+							{
+								GUID: "guid2",
+								Type: "product2",
+							},
+						},
+					}, nil
+				},
+			}
+
+			err := applychanges.Execute(mloader, tloader, mockClient, []string{"product3", "product2"}, true, defReportPrinter)
+
+			Expect(err).To(HaveOccurred())
+			Expect(postedURL).To(BeEmpty())
+		})
+
+		It("fails when tile loading fails", func() {
+			mloader := fakes.FakeManifestsLoader{
+				LoadResponseFunc: func(status manifest.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
+					return manifest.Manifests{}, nil
+				},
+			}
+
+			tloader := fakes.FakeTilesLoader{
+				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
+					return tile.Tiles{}, errors.New("can't load tiles")
+				},
+			}
+
+			err := applychanges.Execute(mloader, tloader, mockClient, []string{"product3"}, true, defReportPrinter)
+
+			Expect(err).To(HaveOccurred())
+			Expect(err.Error()).To(Equal("can't load tiles"))
+			Expect(postedURL).To(BeEmpty())
+		})
+
 		It("prints out the diff for only the tiles being deployed", func() {
 
 			mloader := fakes.FakeManifestsLoader{
@@ -187,6 +266,23 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
+			tloader := fakes.FakeTilesLoader{
+				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
+					return tile.Tiles{
+						Data: []*tile.Tile{
+							{
+								Type: "product1",
+								GUID: "product1",
+							},
+							{
+								Type: "product2",
+								GUID: "product2",
+							},
+						},
+					}, nil
+				},
+			}
+
 			var diff string
 			var err error
 			rp := fakes.FakeReportPrinter{
@@ -196,7 +292,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			applychanges.Execute(mloader, mockClient, []string{"product1", "product2"}, true, rp)
+			applychanges.Execute(mloader, tloader, mockClient, []string{"product1", "product2"}, true, rp)
 
 			Expect(err).ToNot(HaveOccurred())
 
