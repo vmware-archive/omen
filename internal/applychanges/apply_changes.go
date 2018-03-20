@@ -56,7 +56,7 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []str
 
 		if proceed == false {
 			fmt.Println("Cancelled apply changes")
-			return err
+			return nil
 		}
 
 		fmt.Println("Applying changes")
