@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+
 	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
@@ -50,7 +51,6 @@ func (l Loader) load(fetchTileMetadata bool, status common.ProductStatus) (Tiles
 	}
 
 	return Tiles{data}, nil
-
 }
 
 func (l Loader) loadTileMetadata(t *Tile, status common.ProductStatus) error {
