@@ -17,6 +17,7 @@ const (
 // go:generate counterfeiter . errandService
 type errandService interface {
 	List(productID string) (api.ErrandsListOutput, error)
+	SetState(productID string, errandName string, postDeployState interface{}, preDeleteState interface{}) error
 }
 
 // go:generate counterfeiter . reporter
@@ -79,7 +80,7 @@ func (et errandToggler) Execute(products []string) error {
 }
 
 func (et errandToggler) updateErrandsForProduct(product string) error {
-	errands, err := et.client.List(product)
+	errandsList, err := et.client.List(product)
 	if err != nil {
 		return err
 	}
@@ -87,13 +88,53 @@ func (et errandToggler) updateErrandsForProduct(product string) error {
 	report := fmt.Sprintf("Errands for %s\n", product)
 	et.rp.PrintReport(report, nil)
 
-	for _, errand := range errands.Errands {
-		et.reportErrand(errand)
+	transitioningErrands := et.getTransitioningErrands(errandsList.Errands)
+	for _, errand := range errandsList.Errands {
+		if errand.PostDeploy == nil {
+			continue
+		}
+
+		if _, ok := transitioningErrands[errand]; ok {
+			et.client.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
+			report = fmt.Sprintf("%s\t%s => %s\n", errand.Name, getErrandStateString(errand), et.action)
+		} else {
+			report = fmt.Sprintf("%s\t%s\n", errand.Name, getErrandStateString(errand))
+		}
+		et.rp.PrintReport(report, nil)
 	}
 	return nil
 }
 
-func (et errandToggler) reportErrand(errand api.Errand) {
+func (et errandToggler) getTransitioningErrands(errands []api.Errand) map[api.Errand]interface{} {
+	result := make(map[api.Errand]interface{})
+
+	for _, errand := range errands {
+		errandState := getErrandStateString(errand)
+		if errandState == "" {
+			continue
+		}
+		if errandState != et.action {
+			result[errand] = nil
+		}
+	}
+
+	return result
+}
+
+func (et errandToggler) getErrandStateFlag() interface{} {
+	switch et.action {
+	case errandStateDefault:
+		return "default"
+	case errandStateDisabled:
+		return false
+	case errandStateEnabled:
+		return true
+	default:
+		return nil
+	}
+}
+
+func getErrandStateString(errand api.Errand) string {
 	errandState := ""
 
 	switch errand.PostDeploy.(type) {
@@ -105,16 +146,7 @@ func (et errandToggler) reportErrand(errand api.Errand) {
 		}
 	case string:
 		errandState = errand.PostDeploy.(string)
-	default:
-		return
 	}
 
-	report := ""
-	if errandState != et.action {
-		report = fmt.Sprintf("%s\t%s => %s\n", errand.Name, errandState, et.action)
-	} else {
-		report = fmt.Sprintf("%s\t%s\n", errand.Name, errandState)
-	}
-
-	et.rp.PrintReport(report, nil)
+	return errandState
 }

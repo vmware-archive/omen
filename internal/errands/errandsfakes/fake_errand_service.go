@@ -21,6 +21,20 @@ type FakeErrandService struct {
 		result1 api.ErrandsListOutput
 		result2 error
 	}
+	SetStateStub        func(productID string, errandName string, postDeployState interface{}, preDeleteState interface{}) error
+	setStateMutex       sync.RWMutex
+	setStateArgsForCall []struct {
+		productID       string
+		errandName      string
+		postDeployState interface{}
+		preDeleteState  interface{}
+	}
+	setStateReturns struct {
+		result1 error
+	}
+	setStateReturnsOnCall map[int]struct {
+		result1 error
+	}
 	invocations      map[string][][]interface{}
 	invocationsMutex sync.RWMutex
 }
@@ -76,11 +90,64 @@ func (fake *FakeErrandService) ListReturnsOnCall(i int, result1 api.ErrandsListO
 	}{result1, result2}
 }
 
+func (fake *FakeErrandService) SetState(productID string, errandName string, postDeployState interface{}, preDeleteState interface{}) error {
+	fake.setStateMutex.Lock()
+	ret, specificReturn := fake.setStateReturnsOnCall[len(fake.setStateArgsForCall)]
+	fake.setStateArgsForCall = append(fake.setStateArgsForCall, struct {
+		productID       string
+		errandName      string
+		postDeployState interface{}
+		preDeleteState  interface{}
+	}{productID, errandName, postDeployState, preDeleteState})
+	fake.recordInvocation("SetState", []interface{}{productID, errandName, postDeployState, preDeleteState})
+	fake.setStateMutex.Unlock()
+	if fake.SetStateStub != nil {
+		return fake.SetStateStub(productID, errandName, postDeployState, preDeleteState)
+	}
+	if specificReturn {
+		return ret.result1
+	}
+	return fake.setStateReturns.result1
+}
+
+func (fake *FakeErrandService) SetStateCallCount() int {
+	fake.setStateMutex.RLock()
+	defer fake.setStateMutex.RUnlock()
+	return len(fake.setStateArgsForCall)
+}
+
+func (fake *FakeErrandService) SetStateArgsForCall(i int) (string, string, interface{}, interface{}) {
+	fake.setStateMutex.RLock()
+	defer fake.setStateMutex.RUnlock()
+	return fake.setStateArgsForCall[i].productID, fake.setStateArgsForCall[i].errandName, fake.setStateArgsForCall[i].postDeployState, fake.setStateArgsForCall[i].preDeleteState
+}
+
+func (fake *FakeErrandService) SetStateReturns(result1 error) {
+	fake.SetStateStub = nil
+	fake.setStateReturns = struct {
+		result1 error
+	}{result1}
+}
+
+func (fake *FakeErrandService) SetStateReturnsOnCall(i int, result1 error) {
+	fake.SetStateStub = nil
+	if fake.setStateReturnsOnCall == nil {
+		fake.setStateReturnsOnCall = make(map[int]struct {
+			result1 error
+		})
+	}
+	fake.setStateReturnsOnCall[i] = struct {
+		result1 error
+	}{result1}
+}
+
 func (fake *FakeErrandService) Invocations() map[string][][]interface{} {
 	fake.invocationsMutex.RLock()
 	defer fake.invocationsMutex.RUnlock()
 	fake.listMutex.RLock()
 	defer fake.listMutex.RUnlock()
+	fake.setStateMutex.RLock()
+	defer fake.setStateMutex.RUnlock()
 	copiedInvocations := map[string][][]interface{}{}
 	for key, value := range fake.invocations {
 		copiedInvocations[key] = value

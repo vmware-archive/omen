@@ -3,6 +3,8 @@ package errands_test
 import (
 	"errors"
 
+	"fmt"
+
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cf/om/api"
@@ -33,6 +35,7 @@ var _ = Describe("Toggle Errands", func() {
 				{
 					Name:       "errand1",
 					PostDeploy: true,
+					PreDelete:  true,
 				},
 				{
 					Name:       "errand2",
@@ -97,7 +100,26 @@ var _ = Describe("Toggle Errands", func() {
 			})
 
 			It("only enables post-deploy errands not at desired state", func() {
+				es.ListReturns(errandServiceResponse, nil)
 
+				et.Disable().Execute([]string{"PEANUTS-and-butter"})
+
+				Expect(es.SetStateCallCount()).To(Equal(3))
+
+				for i := range []int{0, 1, 2} {
+					isFirstRun := i == 0
+					productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
+					Expect(productName).To(Equal("PEANUTS-and-butter"))
+					Expect(postDeployState).To(BeFalse())
+
+					if isFirstRun {
+						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+1)))
+						Expect(preDeleteState).To(BeTrue())
+					} else {
+						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+2)))
+						Expect(preDeleteState).To(BeNil())
+					}
+				}
 			})
 		})
 
