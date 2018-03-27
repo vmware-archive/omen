@@ -33,18 +33,18 @@ type ErrandToggler interface {
 }
 
 type errandToggler struct {
-	client      errandService
-	interactive bool
-	action      string
-	rp          reporter
+	errandService errandService
+	interactive   bool
+	action        string
+	reporter      reporter
 }
 
-func NewErrandToggler(client errandService, rp reporter) ErrandToggler {
+func NewErrandToggler(es errandService, rp reporter) ErrandToggler {
 	return errandToggler{
-		client:      client,
-		interactive: false,
-		action:      defaultTogglerAction,
-		rp:          rp,
+		errandService: es,
+		interactive:   false,
+		action:        defaultTogglerAction,
+		reporter:      rp,
 	}
 }
 
@@ -62,10 +62,10 @@ func (et errandToggler) Default() ErrandToggler {
 
 func (et errandToggler) errandTogglerWithState(state string) ErrandToggler {
 	return errandToggler{
-		client:      et.client,
-		interactive: et.interactive,
-		action:      state,
-		rp:          et.rp,
+		errandService: et.errandService,
+		interactive:   et.interactive,
+		action:        state,
+		reporter:      et.reporter,
 	}
 }
 
@@ -80,13 +80,13 @@ func (et errandToggler) Execute(products []string) error {
 }
 
 func (et errandToggler) updateErrandsForProduct(product string) error {
-	errandsList, err := et.client.List(product)
+	errandsList, err := et.errandService.List(product)
 	if err != nil {
 		return err
 	}
 
 	report := fmt.Sprintf("Errands for %s\n", product)
-	et.rp.PrintReport(report, nil)
+	et.reporter.PrintReport(report, nil)
 
 	transitioningErrands := et.getTransitioningErrands(errandsList.Errands)
 	for _, errand := range errandsList.Errands {
@@ -95,12 +95,12 @@ func (et errandToggler) updateErrandsForProduct(product string) error {
 		}
 
 		if _, ok := transitioningErrands[errand]; ok {
-			et.client.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
+			et.errandService.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
 			report = fmt.Sprintf("%s\t%s => %s\n", errand.Name, getErrandStateString(errand), et.action)
 		} else {
 			report = fmt.Sprintf("%s\t%s\n", errand.Name, getErrandStateString(errand))
 		}
-		et.rp.PrintReport(report, nil)
+		et.reporter.PrintReport(report, nil)
 	}
 	return nil
 }
