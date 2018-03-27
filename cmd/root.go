@@ -22,7 +22,7 @@ var rp = userio.ReportPrinter{}
 
 var rootCmd = &cobra.Command{
 	Use:   "omen",
-	Short: "omen is a phenomenal supplemental too to the Pivotal OM CLI",
+	Short: "omen is a phenomenal supplemental tool to the Pivotal OM CLI",
 	Long:  "omen adds functionality helpful to PCF operators",
 	Run: func(cmd *cobra.Command, args []string) {
 		fmt.Println("No command to run, use --help for a list of available commands")
