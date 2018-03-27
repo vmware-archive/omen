@@ -6,6 +6,8 @@ import (
 	"log"
 	"time"
 
+	"net/http"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cf/om/commands"
 	"github.com/pivotal-cf/om/network"
@@ -20,14 +22,16 @@ type Client struct {
 	clientSecret string
 }
 
-func NewClient(baseUrl string, username, secret, client, client_secret string) Client {
-	return Client{baseUrl, username, secret, client, client_secret}
+var defaultRequestTimeout = 30 * time.Second
+
+func NewClient(baseUrl string, username, secret, client, clientSecret string) Client {
+	return Client{baseUrl, username, secret, client, clientSecret}
 }
 
 func (c Client) execute(method string, endpoint string, data string, timeout time.Duration) ([]byte, error) {
 	t := timeout
 	if t == 0 {
-		t = 30 * time.Second
+		t = defaultRequestTimeout
 	}
 	oAuthClient, err := network.NewOAuthClient(
 		c.baseUrl,
@@ -67,4 +71,21 @@ func (c Client) Get(endpoint string, timeout time.Duration) ([]byte, error) {
 func (c Client) Post(endpoint, data string, timeout time.Duration) ([]byte, error) {
 	body, err := c.execute("POST", endpoint, data, timeout)
 	return body, errors.Wrap(err, string(body))
+}
+
+func (c Client) Do(request *http.Request) (*http.Response, error) {
+	client, err := network.NewOAuthClient(
+		c.baseUrl,
+		c.username,
+		c.secret,
+		c.clientID,
+		c.clientSecret,
+		true,
+		false,
+		defaultRequestTimeout,
+	)
+	if err != nil {
+		return nil, err
+	}
+	return client.Do(request)
 }

@@ -3,6 +3,11 @@ package cmd
 import (
 	"errors"
 
+	"fmt"
+
+	"github.com/pivotal-cf/om/api"
+	"github.com/pivotal-cloudops/omen/internal/errands"
+	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
 )
 
@@ -11,6 +16,10 @@ var (
 	errandType           string
 	errandProducts       []string
 	errandNonInteractive bool
+
+	actionEnable  = "enable"
+	actionDisable = "disable"
+	actionDefault = "default"
 )
 
 var toggleErrandsCmd = &cobra.Command{
@@ -34,9 +43,34 @@ func init() {
 		`Set to true to skip user confirmation for apply change`)
 }
 
-func toggleErrandsFunc(cmd *cobra.Command, args []string) {
+var toggleErrandsFunc = func(*cobra.Command, []string) {
 	validateFlags()
+	c := getOpsmanClient()
+	es := api.NewErrandsService(c)
+	et := errands.NewErrandToggler(es, rp)
 
+	switch errandAction {
+	case actionDefault:
+		et = et.Default()
+	case actionEnable:
+		et = et.Enable()
+	}
+	if len(errandProducts) > 0 {
+		et.Execute(errandProducts)
+	} else {
+		tl := tile.NewTilesLoader(c)
+		toggleAllErrands(tl, et)
+	}
+}
+
+func toggleAllErrands(tl tile.Loader, et errands.ErrandToggler) {
+	deployedProducts, err := tl.LoadDeployed(false)
+	if err != nil {
+		rp.PrintReport("", errors.New(fmt.Sprintf("Unable to fetch deployed products:\n%#v", err)))
+	}
+	for _, product := range deployedProducts.Data {
+		et.Execute([]string{product.GUID})
+	}
 }
 
 func validateFlags() {
@@ -50,12 +84,10 @@ func validateFlags() {
 }
 
 func isErrandActionValid(action string) bool {
-	switch action {
-	case "enable":
-	case "disable":
-	case "default":
-		return true
-	}
-
-	return false
+	_, ok := map[string]interface{}{
+		actionEnable:  nil,
+		actionDisable: nil,
+		actionDefault: nil,
+	}[action]
+	return ok
 }

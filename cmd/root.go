@@ -68,6 +68,7 @@ func init() {
 	rootCmd.AddCommand(manifestsCmd)
 	rootCmd.AddCommand(applyChangesCmd)
 	rootCmd.AddCommand(stagedTilesCmd)
+	rootCmd.AddCommand(toggleErrandsCmd)
 }
 
 func Execute() {
