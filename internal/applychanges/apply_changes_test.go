@@ -1,8 +1,6 @@
 package applychanges_test
 
 import (
-	"github.com/pivotal-cloudops/omen/internal/applychanges"
-
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
@@ -10,6 +8,7 @@ import (
 	"io/ioutil"
 	"reflect"
 
+	"github.com/pivotal-cloudops/omen/internal/applychanges"
 	"github.com/pivotal-cloudops/omen/internal/applychanges/applychangesfakes"
 	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/fakes"

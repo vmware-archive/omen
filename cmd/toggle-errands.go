@@ -18,6 +18,7 @@ var (
 
 	actionEnable  = "enable"
 	actionDisable = "disable"
+	actionDefault = "default"
 )
 
 var toggleErrandsCmd = &cobra.Command{
@@ -29,7 +30,7 @@ var toggleErrandsCmd = &cobra.Command{
 
 func init() {
 	toggleErrandsCmd.Flags().StringVar(&errandAction, "action", "",
-		`Set the toggle errand action. Valid values are: enable, disable`)
+		`Set the toggle errand action. Valid values are: enable, disable, default`)
 
 	toggleErrandsCmd.Flags().StringVar(&errandType, "errand-type", "",
 		`Set to the errand type that you want to update. Only supported value is "post-deploy"`)
@@ -42,11 +43,7 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 	validateFlags()
 	c := getOpsmanClient()
 	es := api.NewErrandsService(c)
-	et := errands.NewErrandToggler(es, rp)
-
-	if errandAction == actionEnable {
-		et = et.Enable()
-	}
+	et := newErrandToggler(es)
 
 	if len(errandProducts) > 0 {
 		err := et.Execute(errandProducts)
@@ -57,6 +54,16 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 		tl := tile.NewTilesLoader(c)
 		toggleAllErrands(tl, et)
 	}
+}
+
+func newErrandToggler(es api.ErrandsService) errands.ErrandToggler {
+	et := errands.NewErrandToggler(es, rp)
+	if errandAction == actionEnable {
+		return et.Enable()
+	} else if errandAction == actionDefault {
+		return et.Default()
+	}
+	return et
 }
 
 func toggleAllErrands(tl tile.Loader, et errands.ErrandToggler) {
@@ -86,6 +93,7 @@ func isErrandActionValid(action string) bool {
 	_, ok := map[string]interface{}{
 		actionEnable:  nil,
 		actionDisable: nil,
+		actionDefault: nil,
 	}[action]
 	return ok
 }
