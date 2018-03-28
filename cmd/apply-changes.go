@@ -3,11 +3,12 @@ package cmd
 import (
 	"fmt"
 
+	"strings"
+
 	"github.com/pivotal-cloudops/omen/internal/applychanges"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
-	"strings"
 )
 
 var nonInteractive bool
@@ -45,6 +46,6 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	}
 	err := applychanges.Execute(ml, tl, c, guids, nonInteractive, rp)
 	if err != nil {
-		rp.PrintReport("", err)
+		rp.Fail(err)
 	}
 }

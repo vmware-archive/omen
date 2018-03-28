@@ -3,10 +3,10 @@ package cmd
 import (
 	"encoding/json"
 
+	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
-	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var manifestsCmd = &cobra.Command{
@@ -19,14 +19,14 @@ var manifestsCmd = &cobra.Command{
 
 		manifests, err := manifestLoader.LoadAll(common.DEPLOYED)
 		if err != nil {
-			rp.PrintReport("", err)
+			rp.Fail(err)
 		}
 
 		bytes, err := json.MarshalIndent(manifests, "", " ")
 		if err != nil {
-			rp.PrintReport("", err)
+			rp.Fail(err)
 		}
 
-		rp.PrintReport(string(bytes), nil)
+		rp.PrintReport(string(bytes))
 	},
 }

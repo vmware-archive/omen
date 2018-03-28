@@ -12,14 +12,12 @@ import (
 )
 
 var (
-	errandAction         string
-	errandType           string
-	errandProducts       []string
-	errandNonInteractive bool
+	errandAction   string
+	errandType     string
+	errandProducts []string
 
 	actionEnable  = "enable"
 	actionDisable = "disable"
-	actionDefault = "default"
 )
 
 var toggleErrandsCmd = &cobra.Command{
@@ -31,16 +29,13 @@ var toggleErrandsCmd = &cobra.Command{
 
 func init() {
 	toggleErrandsCmd.Flags().StringVar(&errandAction, "action", "",
-		`Set the toggle errand action. Valid values are: enable, disable, default`)
+		`Set the toggle errand action. Valid values are: enable, disable`)
 
 	toggleErrandsCmd.Flags().StringVar(&errandType, "errand-type", "",
-		`Set to true to skip user confirmation for apply change`)
+		`Set to the errand type that you want to update. Only supported value is "post-deploy"`)
 
 	toggleErrandsCmd.Flags().StringSliceVar(&errandProducts, "products", []string{},
 		`(Optional) A comma-delimited list of products for errand updates. When omitted, all products will be affected.`)
-
-	toggleErrandsCmd.Flags().BoolVarP(&errandNonInteractive, "non-interactive", "n", false,
-		`Set to true to skip user confirmation for apply change`)
 }
 
 var toggleErrandsFunc = func(*cobra.Command, []string) {
@@ -49,14 +44,15 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 	es := api.NewErrandsService(c)
 	et := errands.NewErrandToggler(es, rp)
 
-	switch errandAction {
-	case actionDefault:
-		et = et.Default()
-	case actionEnable:
+	if errandAction == actionEnable {
 		et = et.Enable()
 	}
+
 	if len(errandProducts) > 0 {
-		et.Execute(errandProducts)
+		err := et.Execute(errandProducts)
+		if err != nil {
+			rp.Fail(err)
+		}
 	} else {
 		tl := tile.NewTilesLoader(c)
 		toggleAllErrands(tl, et)
@@ -66,20 +62,23 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 func toggleAllErrands(tl tile.Loader, et errands.ErrandToggler) {
 	deployedProducts, err := tl.LoadDeployed(false)
 	if err != nil {
-		rp.PrintReport("", errors.New(fmt.Sprintf("Unable to fetch deployed products:\n%#v", err)))
+		rp.Fail(errors.New(fmt.Sprintf("Unable to fetch deployed products:\n%#v", err)))
 	}
 	for _, product := range deployedProducts.Data {
-		et.Execute([]string{product.GUID})
+		err := et.Execute([]string{product.GUID})
+		if err != nil {
+			rp.Fail(err)
+		}
 	}
 }
 
 func validateFlags() {
 	if !isErrandActionValid(errandAction) {
-		rp.PrintReport("", errors.New("invalid value specified for mandatory flag 'action'"))
+		rp.Fail(errors.New("invalid value specified for mandatory flag 'action'"))
 	}
 
 	if errandType != "post-deploy" {
-		rp.PrintReport("", errors.New("invalid value specified for mandatory flag 'errand-type'"))
+		rp.Fail(errors.New("invalid value specified for mandatory flag 'errand-type'"))
 	}
 }
 
@@ -87,7 +86,6 @@ func isErrandActionValid(action string) bool {
 	_, ok := map[string]interface{}{
 		actionEnable:  nil,
 		actionDisable: nil,
-		actionDefault: nil,
 	}[action]
 	return ok
 }

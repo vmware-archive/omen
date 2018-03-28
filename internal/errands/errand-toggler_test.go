@@ -87,9 +87,7 @@ var _ = Describe("Toggle Errands", func() {
 					et.Disable().Execute([]string{"PEANUTS-and-butter"})
 					output := ""
 					for i := 0; i < rp.PrintReportCallCount(); i++ {
-						text, err := rp.PrintReportArgsForCall(i)
-						Expect(err).NotTo(HaveOccurred())
-						output += text
+						output += rp.PrintReportArgsForCall(i)
 					}
 
 					Expect(output).To(ContainSubstring("Errands for PEANUTS-and-butter"))
@@ -100,24 +98,31 @@ var _ = Describe("Toggle Errands", func() {
 					Expect(output).NotTo(ContainSubstring("errand5"))
 				})
 
-				It("only enables post-deploy errands not at desired state", func() {
+				It("only disables post-deploy errands not at desired state", func() {
 					et.Disable().Execute([]string{"PEANUTS-and-butter"})
+					output := ""
+					for i := 0; i < rp.PrintReportCallCount(); i++ {
+						output += rp.PrintReportArgsForCall(i)
+					}
 
 					Expect(es.SetStateCallCount()).To(Equal(3))
 
 					for i := range []int{0, 1, 2} {
-						isFirstRun := i == 0
 						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(BeFalse())
 
-						if isFirstRun {
-							Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+1)))
+						Expect(errandName).ToNot(Equal("errand2"))
+						Expect(errandName).ToNot(Equal("errand5"))
+
+						if errandName == "errand1" {
 							Expect(preDeleteState).To(BeTrue())
 						} else {
-							Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+2)))
 							Expect(preDeleteState).To(BeNil())
 						}
+
+						expectedOut := fmt.Sprintf("updating %s to disabled", errandName)
+						Expect(output).To(ContainSubstring(expectedOut))
 					}
 				})
 			})
@@ -127,9 +132,7 @@ var _ = Describe("Toggle Errands", func() {
 					et.Enable().Execute([]string{"PEANUTS-and-butter"})
 					output := ""
 					for i := 0; i < rp.PrintReportCallCount(); i++ {
-						text, err := rp.PrintReportArgsForCall(i)
-						Expect(err).NotTo(HaveOccurred())
-						output += text
+						output += rp.PrintReportArgsForCall(i)
 					}
 
 					Expect(output).To(ContainSubstring("Errands for PEANUTS-and-butter"))
@@ -142,6 +145,10 @@ var _ = Describe("Toggle Errands", func() {
 
 				It("only enables post-deploy errands not at desired state", func() {
 					et.Enable().Execute([]string{"PEANUTS-and-butter"})
+					output := ""
+					for i := 0; i < rp.PrintReportCallCount(); i++ {
+						output += rp.PrintReportArgsForCall(i)
+					}
 
 					Expect(es.SetStateCallCount()).To(Equal(3))
 
@@ -149,8 +156,14 @@ var _ = Describe("Toggle Errands", func() {
 						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(BeTrue())
-						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+2)))
+
+						Expect(errandName).ToNot(Equal("errand1"))
+						Expect(errandName).ToNot(Equal("errand5"))
+
 						Expect(preDeleteState).To(BeNil())
+
+						expectedOut := fmt.Sprintf("updating %s to enabled", errandName)
+						Expect(output).To(ContainSubstring(expectedOut))
 					}
 				})
 			})
@@ -160,9 +173,7 @@ var _ = Describe("Toggle Errands", func() {
 					et.Default().Execute([]string{"PEANUTS-and-butter"})
 					output := ""
 					for i := 0; i < rp.PrintReportCallCount(); i++ {
-						text, err := rp.PrintReportArgsForCall(i)
-						Expect(err).NotTo(HaveOccurred())
-						output += text
+						output += rp.PrintReportArgsForCall(i)
 					}
 
 					Expect(output).To(ContainSubstring("Errands for PEANUTS-and-butter"))
@@ -175,6 +186,10 @@ var _ = Describe("Toggle Errands", func() {
 
 				It("only enables post-deploy errands not at desired state", func() {
 					et.Default().Execute([]string{"PEANUTS-and-butter"})
+					output := ""
+					for i := 0; i < rp.PrintReportCallCount(); i++ {
+						output += rp.PrintReportArgsForCall(i)
+					}
 
 					Expect(es.SetStateCallCount()).To(Equal(3))
 
@@ -182,14 +197,26 @@ var _ = Describe("Toggle Errands", func() {
 						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(Equal("default"))
-						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+1)))
+
+						Expect(errandName).ToNot(Equal("errand4"))
+						Expect(errandName).ToNot(Equal("errand5"))
 
 						if i == 0 {
 							Expect(preDeleteState).To(BeTrue())
 						} else {
 							Expect(preDeleteState).To(BeNil())
 						}
+
+						expectedOut := fmt.Sprintf("updating %s to default", errandName)
+						Expect(output).To(ContainSubstring(expectedOut))
 					}
+				})
+
+				It("propagates the error from the errand service", func() {
+					es.SetStateReturns(errors.New("blah"))
+
+					err := et.Default().Execute([]string{"PEANUTS-and-butter"})
+					Expect(err).To(HaveOccurred())
 				})
 			})
 		})

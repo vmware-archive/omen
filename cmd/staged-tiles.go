@@ -22,15 +22,15 @@ var stagedTilesCmd = &cobra.Command{
 
 		tiles, err := tileLoader.LoadStaged(true)
 		if err != nil {
-			rp.PrintReport("", err)
+			rp.Fail(err)
 		}
 
 		err = tiles.Write(outputDir)
 		if err != nil {
-			rp.PrintReport("", err)
+			rp.Fail(err)
 		}
 
-		fmt.Println("tiles written to", outputDir)
+		rp.PrintReport(fmt.Sprintf("tiles written to%s\n", outputDir))
 	},
 }
 

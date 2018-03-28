@@ -4,15 +4,16 @@ import (
 	"fmt"
 	"time"
 
+	"strings"
+
+	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/diff"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
-	"github.com/pivotal-cloudops/omen/internal/userio"
-	"strings"
 	"github.com/pivotal-cloudops/omen/internal/tile"
-	"github.com/pivotal-cloudops/omen/internal/common"
+	"github.com/pivotal-cloudops/omen/internal/userio"
 )
 
-const APPLY_CHANGES_BODY = `{
+const applyChangesBody = `{
     "ignore_warnings": true,
     "deploy_products": "%s"
 }`
@@ -27,15 +28,16 @@ type tilesLoader interface {
 	LoadDeployed(bool) (tile.Tiles, error)
 }
 
+//go:generate counterfeiter . reportPrinter
 type reportPrinter interface {
-	PrintReport(report string, err error)
+	PrintReport(string)
 }
 
 type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []string, nonInteractive bool, rp reportPrinter) (error) {
+func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []string, nonInteractive bool, rp reportPrinter) error {
 	tileGuids, err := slugsToGuids(tileSlugs, tl)
 	if err != nil {
 		return err
@@ -65,9 +67,9 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []str
 
 	var body string
 	if len(tileGuids) == 0 {
-		body = fmt.Sprintf(APPLY_CHANGES_BODY, "all")
+		body = fmt.Sprintf(applyChangesBody, "all")
 	} else {
-		body = fmt.Sprintf(APPLY_CHANGES_BODY, strings.Join(tileGuids, ","))
+		body = fmt.Sprintf(applyChangesBody, strings.Join(tileGuids, ","))
 	}
 
 	resp, err := c.Post("/api/v0/installations", body, 10*time.Minute)
@@ -133,7 +135,7 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 		return "", err
 	}
 
-	rp.PrintReport(d, nil)
+	rp.PrintReport(d)
 
 	return d, err
 }

@@ -6,13 +6,15 @@ import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 
-	"github.com/pivotal-cloudops/omen/internal/fakes"
-	"github.com/pivotal-cloudops/omen/internal/manifest"
-	"reflect"
 	"errors"
 	"io/ioutil"
-	"github.com/pivotal-cloudops/omen/internal/tile"
+	"reflect"
+
+	"github.com/pivotal-cloudops/omen/internal/applychanges/applychangesfakes"
 	"github.com/pivotal-cloudops/omen/internal/common"
+	"github.com/pivotal-cloudops/omen/internal/fakes"
+	"github.com/pivotal-cloudops/omen/internal/manifest"
+	"github.com/pivotal-cloudops/omen/internal/tile"
 )
 
 var _ = Describe("Apply Changes - Execute", func() {
@@ -26,11 +28,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		},
 	}
 
-	defReportPrinter := fakes.FakeReportPrinter{
-		FakeReportFunc: func(string, error) {
-			return
-		},
-	}
+	defReportPrinter := &applychangesfakes.FakeReportPrinter{}
 
 	BeforeEach(func() {
 		postedURL = ""
@@ -131,15 +129,9 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		tloader := fakes.FakeTilesLoader{}
 
-		var diff string
-		rp := fakes.FakeReportPrinter{
-			FakeReportFunc: func(s string, e error) {
-				diff = s
-			},
-		}
-
+		rp := &applychangesfakes.FakeReportPrinter{}
 		applychanges.Execute(mloader, tloader, mockClient, []string{}, true, rp)
-
+		diff := rp.PrintReportArgsForCall(0)
 		Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 	})
 
@@ -284,18 +276,10 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			var diff string
-			var err error
-			rp := fakes.FakeReportPrinter{
-				FakeReportFunc: func(s string, e error) {
-					diff = s
-					err = e
-				},
-			}
+			rp := &applychangesfakes.FakeReportPrinter{}
 
 			applychanges.Execute(mloader, tloader, mockClient, []string{"product1", "product2"}, true, rp)
-
-			Expect(err).ToNot(HaveOccurred())
+			diff := rp.PrintReportArgsForCall(0)
 
 			expectedDiff, err := ioutil.ReadFile("testdata/diff.txt")
 			Expect(err).ToNot(HaveOccurred())

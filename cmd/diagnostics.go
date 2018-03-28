@@ -12,6 +12,9 @@ var diagnosticsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		client := getOpsmanClient()
 		report, err := client.Get("/api/v0/diagnostic_report", 10*time.Minute)
-		rp.PrintReport(string(report), err)
+		if err != nil {
+			rp.Fail(err)
+		}
+		rp.PrintReport(string(report))
 	},
 }

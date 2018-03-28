@@ -14,15 +14,15 @@ const (
 	defaultTogglerAction = errandStateDisabled
 )
 
-// go:generate counterfeiter . errandService
+//go:generate counterfeiter . errandService
 type errandService interface {
 	List(productID string) (api.ErrandsListOutput, error)
 	SetState(productID string, errandName string, postDeployState interface{}, preDeleteState interface{}) error
 }
 
-// go:generate counterfeiter . reporter
+//go:generate counterfeiter . reporter
 type reporter interface {
-	PrintReport(report string, err error)
+	PrintReport(report string)
 }
 
 type ErrandToggler interface {
@@ -71,6 +71,7 @@ func (et errandToggler) errandTogglerWithState(state string) ErrandToggler {
 
 func (et errandToggler) Execute(products []string) error {
 	for _, p := range products {
+		et.reporter.PrintReport("\n")
 		err := et.updateErrandsForProduct(p)
 		if err != nil {
 			return err
@@ -86,7 +87,8 @@ func (et errandToggler) updateErrandsForProduct(product string) error {
 	}
 
 	report := fmt.Sprintf("Errands for %s\n", product)
-	et.reporter.PrintReport(report, nil)
+	et.reporter.PrintReport(report)
+	et.reporter.PrintReport("---------------------------------")
 
 	transitioningErrands := et.getTransitioningErrands(errandsList.Errands)
 	for _, errand := range errandsList.Errands {
@@ -95,12 +97,24 @@ func (et errandToggler) updateErrandsForProduct(product string) error {
 		}
 
 		if _, ok := transitioningErrands[errand]; ok {
-			et.errandService.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
 			report = fmt.Sprintf("%s\t%s => %s\n", errand.Name, getErrandStateString(errand), et.action)
 		} else {
 			report = fmt.Sprintf("%s\t%s\n", errand.Name, getErrandStateString(errand))
 		}
-		et.reporter.PrintReport(report, nil)
+		et.reporter.PrintReport(report)
+	}
+
+	et.reporter.PrintReport("")
+	et.reporter.PrintReport("---------------------------------")
+
+	for errand := range transitioningErrands {
+		report := fmt.Sprintf("updating %s to %s", errand.Name, et.action)
+		et.reporter.PrintReport(report)
+
+		err := et.errandService.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
