@@ -66,7 +66,7 @@ var _ = Describe("Toggle Errands", func() {
 					},
 					{
 						Name:       "errand4",
-						PostDeploy: "default",
+						PostDeploy: false,
 					},
 					{
 						Name:      "errand5",
@@ -94,7 +94,7 @@ var _ = Describe("Toggle Errands", func() {
 					Expect(output).To(MatchRegexp("errand1\\s+enabled => disabled"))
 					Expect(output).To(MatchRegexp("errand2\\s+disabled\\n"))
 					Expect(output).To(MatchRegexp("errand3\\s+when-changed => disabled"))
-					Expect(output).To(MatchRegexp("errand4\\s+default => disabled"))
+					Expect(output).To(MatchRegexp("errand4\\s+disabled"))
 					Expect(output).NotTo(ContainSubstring("errand5"))
 				})
 
@@ -105,9 +105,9 @@ var _ = Describe("Toggle Errands", func() {
 						output += rp.PrintReportArgsForCall(i)
 					}
 
-					Expect(es.SetStateCallCount()).To(Equal(3))
+					Expect(es.SetStateCallCount()).To(Equal(2))
 
-					for i := range []int{0, 1, 2} {
+					for i := range []int{0, 1} {
 						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(BeFalse())
@@ -139,7 +139,7 @@ var _ = Describe("Toggle Errands", func() {
 					Expect(output).To(MatchRegexp("errand1\\s+enabled\\n"))
 					Expect(output).To(MatchRegexp("errand2\\s+disabled => enabled"))
 					Expect(output).To(MatchRegexp("errand3\\s+when-changed => enabled"))
-					Expect(output).To(MatchRegexp("errand4\\s+default => enabled"))
+					Expect(output).To(MatchRegexp("errand4\\s+disabled => enabled"))
 					Expect(output).NotTo(ContainSubstring("errand5"))
 				})
 
@@ -180,7 +180,7 @@ var _ = Describe("Toggle Errands", func() {
 					Expect(output).To(MatchRegexp("errand1\\s+enabled => default"))
 					Expect(output).To(MatchRegexp("errand2\\s+disabled => default"))
 					Expect(output).To(MatchRegexp("errand3\\s+when-changed => default"))
-					Expect(output).To(MatchRegexp("errand4\\s+default"))
+					Expect(output).To(MatchRegexp("errand4\\s+disabled => default"))
 					Expect(output).NotTo(ContainSubstring("errand5"))
 				})
 
@@ -191,17 +191,16 @@ var _ = Describe("Toggle Errands", func() {
 						output += rp.PrintReportArgsForCall(i)
 					}
 
-					Expect(es.SetStateCallCount()).To(Equal(3))
+					Expect(es.SetStateCallCount()).To(Equal(4))
 
-					for i := range []int{0, 1, 2} {
+					for i := range []int{0, 1, 2, 3} {
 						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(Equal("default"))
 
-						Expect(errandName).ToNot(Equal("errand4"))
-						Expect(errandName).ToNot(Equal("errand5"))
+						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+1)))
 
-						if i == 0 {
+						if errandName == "errand1" {
 							Expect(preDeleteState).To(BeTrue())
 						} else {
 							Expect(preDeleteState).To(BeNil())
