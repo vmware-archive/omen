@@ -39,8 +39,8 @@ omen apply-changes
 
 ### Toggle product errands
 
-The `toggle-errands` command requires the `--errand-type` option, which can currently 
-only accepts `post-deploy` as its value, the target errand state `--action` which can
+The `toggle-errands` command requires the `--errand-type` option, which currently 
+only accepts `post-deploy` as its value; and the target errand state `--action` which can
 be one of `enable`, `disable` or `default`.
 
 Optionally, a comma-delimited list of product guids can be supplied as a value for the 
