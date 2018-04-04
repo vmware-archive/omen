@@ -20,6 +20,12 @@
   version = "v1.4.7"
 
 [[projects]]
+  name = "github.com/ghodss/yaml"
+  packages = ["."]
+  revision = "0ca9ea5df5451ffdf184b4428c902747c2c11cd7"
+  version = "v1.0.0"
+
+[[projects]]
   name = "github.com/golang/protobuf"
   packages = ["proto"]
   revision = "925541529c1fa6821df4e44ce2723319eb2be768"
@@ -98,10 +104,15 @@
   revision = "138431ae704a43b314d1fa808cd8f6725ae16866"
 
 [[projects]]
+  branch = "master"
+  name = "github.com/pivotal-cf/kiln"
+  packages = ["proofing"]
+  revision = "9c0f5ac8553d4e981aec5d24d55f14936bfb7d3c"
+
+[[projects]]
   name = "github.com/pivotal-cf/om"
-  packages = ["api","commands","formcontent","models","network","presenters"]
-  revision = "116ea7a354a4ee4444a71fb341747588111739ac"
-  version = "0.34.0"
+  packages = ["api","commands","extractor","formcontent","models","network","presenters"]
+  revision = "af6b0653497cd6d035b5d67aa3d3210f504b6f05"
 
 [[projects]]
   name = "github.com/pkg/errors"
@@ -184,6 +195,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "b41b6a37e589684f95e74ef2a6762dc10be9d32ef13756b23ac7bea938a02969"
+  inputs-digest = "4e3aa82f36c952aac37fb58443fb10509bf6472d93a7131f38d61ee5b813787c"
   solver-name = "gps-cdcl"
   solver-version = 1
