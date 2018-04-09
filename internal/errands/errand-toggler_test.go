@@ -182,9 +182,10 @@ var _ = Describe("Toggle Errands", func() {
 					Expect(output).To(MatchRegexp("errand3\\s+when-changed => default"))
 					Expect(output).To(MatchRegexp("errand4\\s+disabled => default"))
 					Expect(output).NotTo(ContainSubstring("errand5"))
+					Expect(output).NotTo(ContainSubstring("errand6"))
 				})
 
-				It("only enables post-deploy errands not at desired state", func() {
+				It("only enables post-deploy errands which are not at desired state", func() {
 					et.Default().Execute([]string{"PEANUTS-and-butter"})
 					output := ""
 					for i := 0; i < rp.PrintReportCallCount(); i++ {
@@ -198,7 +199,8 @@ var _ = Describe("Toggle Errands", func() {
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(Equal("default"))
 
-						Expect(errandName).To(Equal(fmt.Sprintf("errand%d", i+1)))
+						Expect(errandName).ToNot(Equal("errand5"))
+						Expect(errandName).ToNot(Equal("errand6"))
 
 						if errandName == "errand1" {
 							Expect(preDeleteState).To(BeTrue())

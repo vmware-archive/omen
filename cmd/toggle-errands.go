@@ -5,6 +5,8 @@ import (
 
 	"fmt"
 
+	"strings"
+
 	"github.com/pivotal-cf/om/api"
 	"github.com/pivotal-cloudops/omen/internal/errands"
 	"github.com/pivotal-cloudops/omen/internal/tile"
@@ -29,11 +31,11 @@ var toggleErrandsCmd = &cobra.Command{
 }
 
 func init() {
-	toggleErrandsCmd.Flags().StringVar(&errandAction, "action", "",
+	toggleErrandsCmd.Flags().StringVarP(&errandAction, "action", "a", "",
 		`Set the toggle errand action. Valid values are: enable, disable, default`)
 
-	toggleErrandsCmd.Flags().StringVar(&errandType, "errand-type", "",
-		`Set to the errand type that you want to update. Only supported value is "post-deploy"`)
+	toggleErrandsCmd.Flags().StringVar(&errandType, "errand-type", "post-deploy",
+		`(Optional) Set to the errand type that you want to update. Only supported value is "post-deploy"`)
 
 	toggleErrandsCmd.Flags().StringSliceVar(&errandProducts, "products", []string{},
 		`(Optional) A comma-delimited list of products for errand updates. When omitted, all products will be affected.`)
@@ -44,6 +46,14 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 	c := getOpsmanClient()
 	es := api.NewErrandsService(c)
 	et := newErrandToggler(es)
+
+	products := "all"
+	if len(errandProducts) > 0 {
+		products = strings.Join(errandProducts, ",")
+	}
+
+	rep := fmt.Sprintf("Action: %s, Errand-Type: %s, Products: %s", errandAction, errandType, products)
+	rp.PrintReport(rep)
 
 	if len(errandProducts) > 0 {
 		err := et.Execute(errandProducts)
