@@ -11,11 +11,17 @@ import (
 )
 
 const (
-	ENV_OPSMAN_HOST          = "OPSMAN_HOSTNAME"
-	ENV_OPSMAN_USERNAME      = "OPSMAN_USER"
-	ENV_OPSMAN_PASSWORD      = "OPSMAN_PASSWORD"
-	ENV_OPSMAN_CLIENT_ID     = "OPSMAN_CLIENT_ID"
-	ENV_OPSMAN_CLIENT_SECRET = "OPSMAN_CLIENT_SECRET"
+	envOpsmanHost         = "OPSMAN_HOSTNAME"
+	envOpsmanUsername     = "OPSMAN_USER"
+	envOpsmanPassword     = "OPSMAN_PASSWORD"
+	envOpsmanClientId     = "OPSMAN_CLIENT_ID"
+	envOpsmanClientSecret = "OPSMAN_CLIENT_SECRET"
+
+	keyTarget       = "omTarget"
+	keyUser         = "omUser"
+	keyPassword     = "omPassword"
+	keyClientId     = "omClientID"
+	keyClientSecret = "omClientSecret"
 )
 
 var rp = userio.ReportPrinter{}
@@ -33,35 +39,35 @@ var rootCmd = &cobra.Command{
 func init() {
 	var omHost, omUser, omPassword, omClientID, omClientSecret string
 
-	rootCmd.PersistentFlags().StringVarP(&omHost, "om_host", "H", "",
-		fmt.Sprintf("URL to Opsmanager (Defaults to Env Var $%s)", ENV_OPSMAN_HOST))
+	rootCmd.PersistentFlags().StringVarP(&omHost, "target", "H", "",
+		fmt.Sprintf("URL to Opsmanager (Defaults to Env Var $%s)", envOpsmanHost))
 
-	rootCmd.PersistentFlags().StringVarP(&omUser, "om_user", "u", "",
-		fmt.Sprintf("Opsmanager User Name (Defaults to Env Var $%s)", ENV_OPSMAN_USERNAME))
+	rootCmd.PersistentFlags().StringVarP(&omUser, "username", "u", "",
+		fmt.Sprintf("Opsmanager User Name (Defaults to Env Var $%s)", envOpsmanUsername))
 
-	rootCmd.PersistentFlags().StringVarP(&omPassword, "om_password", "p", "",
-		fmt.Sprintf("Opsmanager Password (Defaults to Env Var $%s)", ENV_OPSMAN_PASSWORD))
+	rootCmd.PersistentFlags().StringVarP(&omPassword, "password", "p", "",
+		fmt.Sprintf("Opsmanager Password (Defaults to Env Var $%s)", envOpsmanPassword))
 
-	rootCmd.PersistentFlags().StringVarP(&omClientID, "om_client_id", "c", "",
-		fmt.Sprintf("Opsmanager Client ID (Defaults to Env Var $%s)", ENV_OPSMAN_CLIENT_ID))
+	rootCmd.PersistentFlags().StringVarP(&omClientID, "client-id", "c", "",
+		fmt.Sprintf("Opsmanager Client ID (Defaults to Env Var $%s)", envOpsmanClientId))
 
-	rootCmd.PersistentFlags().StringVarP(&omClientSecret, "om_client_secret", "s", "",
-		fmt.Sprintf("Opsmanager Client Secret (Defaults to Env Var $%s)", ENV_OPSMAN_CLIENT_SECRET))
+	rootCmd.PersistentFlags().StringVarP(&omClientSecret, "client-secret", "s", "",
+		fmt.Sprintf("Opsmanager Client Secret (Defaults to Env Var $%s)", envOpsmanClientSecret))
 
-	viper.BindPFlag("omHost", rootCmd.PersistentFlags().Lookup("om_host"))
-	viper.BindEnv("omHost", ENV_OPSMAN_HOST)
+	viper.BindPFlag(keyTarget, rootCmd.PersistentFlags().Lookup("target"))
+	viper.BindEnv(keyTarget, envOpsmanHost)
 
-	viper.BindPFlag("omUser", rootCmd.PersistentFlags().Lookup("om_user"))
-	viper.BindEnv("omUser", ENV_OPSMAN_USERNAME)
+	viper.BindPFlag(keyUser, rootCmd.PersistentFlags().Lookup("username"))
+	viper.BindEnv(keyUser, envOpsmanUsername)
 
-	viper.BindPFlag("omPassword", rootCmd.PersistentFlags().Lookup("om_password"))
-	viper.BindEnv("omPassword", ENV_OPSMAN_PASSWORD)
+	viper.BindPFlag(keyPassword, rootCmd.PersistentFlags().Lookup("password"))
+	viper.BindEnv(keyPassword, envOpsmanPassword)
 
-	viper.BindPFlag("omClientID", rootCmd.PersistentFlags().Lookup("om_client_id"))
-	viper.BindEnv("omClientID", ENV_OPSMAN_CLIENT_ID)
+	viper.BindPFlag(keyClientId, rootCmd.PersistentFlags().Lookup("client-id"))
+	viper.BindEnv(keyClientId, envOpsmanClientId)
 
-	viper.BindPFlag("omClientSecret", rootCmd.PersistentFlags().Lookup("om_client_secret"))
-	viper.BindEnv("omClientSecret", ENV_OPSMAN_CLIENT_SECRET)
+	viper.BindPFlag(keyClientSecret, rootCmd.PersistentFlags().Lookup("client-secret"))
+	viper.BindEnv(keyClientSecret, envOpsmanClientSecret)
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(diagnosticsCmd)
@@ -79,11 +85,11 @@ func Execute() {
 }
 
 func getOpsmanClient() opsman.Client {
-	url := viper.GetString("omHost")
+	url := viper.GetString(keyTarget)
 	user := ""
 	secret := ""
-	clientID := viper.GetString("omClientID")
-	clientSecret := viper.GetString("omClientSecret")
+	clientID := viper.GetString(keyClientId)
+	clientSecret := viper.GetString(keyClientSecret)
 
 	if url == "" {
 		fmt.Println("Opsman host is required. Please specify by flag or environment variable")
@@ -91,8 +97,8 @@ func getOpsmanClient() opsman.Client {
 	}
 
 	if clientID == "" && clientSecret == "" {
-		user = viper.GetString("omUser")
-		secret = viper.GetString("omPassword")
+		user = viper.GetString(keyUser)
+		secret = viper.GetString(keyPassword)
 
 		if user == "" {
 			fmt.Println("Opsman user is required. Please specify by flag or environment variable")
