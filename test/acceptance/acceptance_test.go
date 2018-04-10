@@ -22,7 +22,7 @@ var _ = Describe("omen acceptance", func() {
 
 	Describe("usernames and passwords", func() {
 		It("should require both to be present", func() {
-			command := exec.Command(pathToOmenCLI, "-H=127.0.0.1", "-u=user", "apply-changes")
+			command := exec.Command(pathToOmenCLI, "-t=https://127.0.0.1", "-u=user", "apply-changes")
 			session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, timeout).Should(gexec.Exit(1))
@@ -32,7 +32,7 @@ var _ = Describe("omen acceptance", func() {
 
 	Describe("client ids and secrets", func() {
 		It("should require both to be present", func() {
-			command := exec.Command(pathToOmenCLI, "-H=127.0.0.1", "-c=client", "apply-changes")
+			command := exec.Command(pathToOmenCLI, "-t=https://127.0.0.1", "-c=client", "apply-changes")
 			session, err := gexec.Start(command, GinkgoWriter, GinkgoWriter)
 			Expect(err).ToNot(HaveOccurred())
 			Eventually(session, timeout).Should(gexec.Exit(1))

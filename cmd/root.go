@@ -39,7 +39,7 @@ var rootCmd = &cobra.Command{
 func init() {
 	var omHost, omUser, omPassword, omClientID, omClientSecret string
 
-	rootCmd.PersistentFlags().StringVarP(&omHost, "target", "H", "",
+	rootCmd.PersistentFlags().StringVarP(&omHost, "target", "t", "",
 		fmt.Sprintf("URL to Opsmanager (Defaults to Env Var $%s)", envOpsmanHost))
 
 	rootCmd.PersistentFlags().StringVarP(&omUser, "username", "u", "",
