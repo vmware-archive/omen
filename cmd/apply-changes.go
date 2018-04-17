@@ -30,7 +30,7 @@ func init() {
 }
 
 var applyChangesFunc = func(cmd *cobra.Command, args []string) {
-	c := getOpsmanClient()
+	c := setupOpsmanClient()
 	tl := tile.NewTilesLoader(c)
 	ml := manifest.NewManifestsLoader(c, tl)
 

@@ -59,6 +59,8 @@ func (c Client) execute(method string, endpoint string, data string, timeout tim
 		err = curlCommand.Execute([]string{"-path", endpoint})
 	case "POST":
 		err = curlCommand.Execute([]string{"-path", endpoint, "-x", "POST", "-d", data})
+	case "DELETE":
+		err = curlCommand.Execute([]string{"-path", endpoint, "-x", "DELETE"})
 	}
 	return stdout.Bytes(), err
 }
@@ -71,6 +73,11 @@ func (c Client) Get(endpoint string, timeout time.Duration) ([]byte, error) {
 func (c Client) Post(endpoint, data string, timeout time.Duration) ([]byte, error) {
 	body, err := c.execute("POST", endpoint, data, timeout)
 	return body, errors.Wrap(err, string(body))
+}
+
+func (c Client) Delete(endpoint string, timeout time.Duration) error {
+	_, err := c.execute("DELETE", endpoint, "", timeout)
+	return err
 }
 
 func (c Client) Do(request *http.Request) (*http.Response, error) {

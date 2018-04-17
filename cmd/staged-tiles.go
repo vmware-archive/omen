@@ -17,7 +17,7 @@ var stagedTilesCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		client := getOpsmanClient()
+		client := setupOpsmanClient()
 		tileLoader := tile.NewTilesLoader(client)
 
 		tiles, err := tileLoader.LoadStaged(true)

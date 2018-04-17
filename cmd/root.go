@@ -8,6 +8,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/pivotal-cloudops/omen/internal/sessions"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 	keyPassword     = "omPassword"
 	keyClientId     = "omClientID"
 	keyClientSecret = "omClientSecret"
+	keyForceLogout  = "forceLogout"
 )
 
 var rp = userio.ReportPrinter{}
@@ -38,6 +40,7 @@ var rootCmd = &cobra.Command{
 
 func init() {
 	var omHost, omUser, omPassword, omClientID, omClientSecret string
+	var forceLogout bool
 
 	rootCmd.PersistentFlags().StringVarP(&omHost, "target", "t", "",
 		fmt.Sprintf("URL to Opsmanager (Defaults to Env Var $%s)", envOpsmanHost))
@@ -54,6 +57,9 @@ func init() {
 	rootCmd.PersistentFlags().StringVarP(&omClientSecret, "client-secret", "s", "",
 		fmt.Sprintf("Opsmanager Client Secret (Defaults to Env Var $%s)", envOpsmanClientSecret))
 
+	rootCmd.PersistentFlags().BoolVarP(&forceLogout, "force-logout", "f", false,
+		"(optional) Log all other users out of opsman before attempting action")
+
 	viper.BindPFlag(keyTarget, rootCmd.PersistentFlags().Lookup("target"))
 	viper.BindEnv(keyTarget, envOpsmanHost)
 
@@ -68,6 +74,8 @@ func init() {
 
 	viper.BindPFlag(keyClientSecret, rootCmd.PersistentFlags().Lookup("client-secret"))
 	viper.BindEnv(keyClientSecret, envOpsmanClientSecret)
+
+	viper.BindPFlag(keyForceLogout, rootCmd.PersistentFlags().Lookup("force-logout"))
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(diagnosticsCmd)
@@ -84,12 +92,13 @@ func Execute() {
 	}
 }
 
-func getOpsmanClient() opsman.Client {
+func setupOpsmanClient() opsman.Client {
 	url := viper.GetString(keyTarget)
 	user := ""
 	secret := ""
 	clientID := viper.GetString(keyClientId)
 	clientSecret := viper.GetString(keyClientSecret)
+	forceLogout := viper.GetBool(keyForceLogout)
 
 	if url == "" {
 		fmt.Println("Opsman host is required. Please specify by flag or environment variable")
@@ -121,5 +130,16 @@ func getOpsmanClient() opsman.Client {
 		}
 	}
 
-	return opsman.NewClient(url, user, secret, clientID, clientSecret)
+	client := opsman.NewClient(url, user, secret, clientID, clientSecret)
+
+	if forceLogout == true {
+		fmt.Println("Logging out all active opsman sessions.")
+		err := sessions.NewSessionManager(client).ClearAll()
+		if err != nil {
+			fmt.Println("Failed to clear sessions with error: ", err.Error())
+			os.Exit(1)
+		}
+	}
+
+	return client
 }

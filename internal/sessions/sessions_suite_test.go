@@ -1,0 +1,13 @@
+package sessions_test
+
+import (
+	. "github.com/onsi/ginkgo"
+	. "github.com/onsi/gomega"
+
+	"testing"
+)
+
+func TestSessions(t *testing.T) {
+	RegisterFailHandler(Fail)
+	RunSpecs(t, "Sessions Suite")
+}

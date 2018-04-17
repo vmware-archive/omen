@@ -13,7 +13,7 @@ var manifestsCmd = &cobra.Command{
 	Use:   "manifests",
 	Short: "get the manifests of all deployments and cloud-config",
 	Run: func(cmd *cobra.Command, args []string) {
-		client := getOpsmanClient()
+		client := setupOpsmanClient()
 		tileLoader := tile.NewTilesLoader(client)
 		manifestLoader := manifest.NewManifestsLoader(client, tileLoader)
 

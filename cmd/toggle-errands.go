@@ -43,7 +43,7 @@ func init() {
 
 var toggleErrandsFunc = func(*cobra.Command, []string) {
 	validateFlags()
-	c := getOpsmanClient()
+	c := setupOpsmanClient()
 	es := api.NewErrandsService(c)
 	et := newErrandToggler(es)
 
