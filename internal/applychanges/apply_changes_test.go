@@ -45,7 +45,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		tloader := fakes.FakeTilesLoader{}
 
-		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true})
+		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false})
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -62,7 +62,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		tloader := fakes.FakeTilesLoader{}
 
-		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true})
+		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false})
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -95,7 +95,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true})
+		applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false})
 
 		Expect(postedURL).To(Equal("/api/v0/installations"))
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
@@ -129,7 +129,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 		tloader := fakes.FakeTilesLoader{}
 
 		rp := &applychangesfakes.FakeReportPrinter{}
-		applychanges.Execute(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true})
+		applychanges.Execute(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true, false})
 		diff := rp.PrintReportArgsForCall(0)
 		Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 	})
@@ -162,7 +162,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true})
+			applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true, false})
 
 			Expect(fetchTileMetadata).To(BeFalse())
 			Expect(postedURL).To(Equal("/api/v0/installations"))
@@ -193,7 +193,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			err := applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3", "product2"}, true})
+			err := applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3", "product2"}, true, false})
 
 			Expect(err).To(HaveOccurred())
 			Expect(postedURL).To(BeEmpty())
@@ -212,7 +212,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			err := applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3"}, true})
+			err := applychanges.Execute(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3"}, true, false})
 
 			Expect(err).To(HaveOccurred())
 			Expect(err.Error()).To(Equal("can't load tiles"))
@@ -277,7 +277,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 			rp := &applychangesfakes.FakeReportPrinter{}
 
-			applychanges.Execute(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true})
+			applychanges.Execute(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true, false})
 			diff := rp.PrintReportArgsForCall(0)
 
 			expectedDiff, err := ioutil.ReadFile("testdata/diff.txt")
@@ -288,4 +288,41 @@ var _ = Describe("Apply Changes - Execute", func() {
 		})
 	})
 
+	Describe("Dry run", func() {
+		It("it outputs the diff but does not apply changes", func() {
+			stagedManifests := manifest.Manifests{
+				Data: []manifest.Manifest{
+					{
+						Name: "staged",
+					},
+				},
+			}
+			deployedManifests := manifest.Manifests{
+				Data: []manifest.Manifest{
+					{
+						Name: "deployed",
+					},
+				},
+			}
+
+			mloader := fakes.FakeManifestsLoader{
+				LoadAllResponseFunc: func(status common.ProductStatus) (manifest.Manifests, error) {
+					if status == common.DEPLOYED {
+						return deployedManifests, nil
+					}
+					return stagedManifests, nil
+				},
+			}
+
+			tloader := fakes.FakeTilesLoader{}
+
+			rp := &applychangesfakes.FakeReportPrinter{}
+			applychanges.Execute(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true, true})
+			diff := rp.PrintReportArgsForCall(0)
+			Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
+
+			Expect(postedURL).To(BeEmpty())
+			Expect(postedBody).To(BeEmpty())
+		})
+	})
 })

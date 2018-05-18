@@ -21,6 +21,7 @@ const applyChangesBody = `{
 type ApplyChangesOptions struct {
 	TileSlugs      []string
 	NonInteractive bool
+	DryRun         bool
 }
 
 type manifestsLoader interface {
@@ -53,6 +54,10 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinte
 	if err != nil {
 		fmt.Println(err)
 		return err
+	}
+
+	if options.DryRun {
+		return nil
 	}
 
 	if len(mDiff) <= 0 {

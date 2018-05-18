@@ -13,6 +13,7 @@ import (
 
 var nonInteractive bool
 var products string
+var dryRun bool
 
 var applyChangesCmd = &cobra.Command{
 	Use:   "apply-changes",
@@ -27,6 +28,9 @@ func init() {
 
 	applyChangesCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "n", false,
 		"Set to true to skip user confirmation for apply change")
+
+	applyChangesCmd.Flags().BoolVarP(&dryRun, "dry-run", "dr", false,
+		"Set to true to display the diff only and skip applying the changes")
 }
 
 var applyChangesFunc = func(cmd *cobra.Command, args []string) {
@@ -44,7 +48,7 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 			guids = append(guids, strings.TrimSpace(s))
 		}
 	}
-	options := applychanges.ApplyChangesOptions{TileSlugs: guids, NonInteractive: nonInteractive}
+	options := applychanges.ApplyChangesOptions{TileSlugs: guids, NonInteractive: nonInteractive, DryRun: dryRun}
 	err := applychanges.Execute(ml, tl, c, rp, options)
 	if err != nil {
 		rp.Fail(err)
