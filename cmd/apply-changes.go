@@ -44,7 +44,8 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 			guids = append(guids, strings.TrimSpace(s))
 		}
 	}
-	err := applychanges.Execute(ml, tl, c, guids, nonInteractive, rp)
+	options := applychanges.ApplyChangesOptions{TileSlugs: guids, NonInteractive: nonInteractive}
+	err := applychanges.Execute(ml, tl, c, rp, options)
 	if err != nil {
 		rp.Fail(err)
 	}

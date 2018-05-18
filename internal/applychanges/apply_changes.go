@@ -18,6 +18,11 @@ const applyChangesBody = `{
     "deploy_products": "%s"
 }`
 
+type ApplyChangesOptions struct {
+	TileSlugs      []string
+	NonInteractive bool
+}
+
 type manifestsLoader interface {
 	LoadAll(status common.ProductStatus) (manifest.Manifests, error)
 	Load(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error)
@@ -37,8 +42,8 @@ type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []string, nonInteractive bool, rp reportPrinter) error {
-	tileGuids, err := slugsToGuids(tileSlugs, tl)
+func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinter, options ApplyChangesOptions) error {
+	tileGuids, err := slugsToGuids(options.TileSlugs, tl)
 	if err != nil {
 		return err
 	}
@@ -54,7 +59,7 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, tileSlugs []str
 		fmt.Println("Warning: Opsman has detected no pending changes")
 	}
 
-	if nonInteractive == false {
+	if options.NonInteractive == false {
 		proceed := userio.GetConfirmation("Do you wish to continue (y/n)?")
 
 		if proceed == false {
