@@ -14,6 +14,7 @@ import (
 var nonInteractive bool
 var products string
 var dryRun bool
+var quiet bool
 
 var applyChangesCmd = &cobra.Command{
 	Use:   "apply-changes",
@@ -27,10 +28,13 @@ func init() {
 		`Optional flag to set the products to apply changes for (e.g. "product-1" or "product-1,product-2")`)
 
 	applyChangesCmd.Flags().BoolVarP(&nonInteractive, "non-interactive", "n", false,
-		"Set to true to skip user confirmation for apply change")
+		"Set this flag to skip user confirmation for apply change")
 
-	applyChangesCmd.Flags().BoolVarP(&dryRun, "dry-run", "dr", false,
-		"Set to true to display the diff only and skip applying the changes")
+	applyChangesCmd.Flags().BoolVarP(&dryRun, "dry-run", "d", false,
+		"Set this flag to display the diff only and skip applying the changes")
+
+	applyChangesCmd.Flags().BoolVarP(&quiet, "quiet", "q", false,
+		"Set this flag to suppress the diff output for apply changes")
 }
 
 var applyChangesFunc = func(cmd *cobra.Command, args []string) {
@@ -48,8 +52,17 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 			guids = append(guids, strings.TrimSpace(s))
 		}
 	}
-	options := applychanges.ApplyChangesOptions{TileSlugs: guids, NonInteractive: nonInteractive, DryRun: dryRun}
-	err := applychanges.Execute(ml, tl, c, rp, options)
+
+	options := applychanges.ApplyChangesOptions{
+		TileSlugs: guids,
+		NonInteractive: nonInteractive,
+		DryRun: dryRun,
+		Quiet: quiet,
+	}
+	op := applychanges.NewApplyChangesOp(ml, tl, c, rp, options)
+
+	err := op.Execute()
+
 	if err != nil {
 		rp.Fail(err)
 	}

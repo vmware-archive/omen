@@ -4,13 +4,12 @@ import (
 	"fmt"
 	"time"
 
-	"strings"
-
 	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/diff"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/pivotal-cloudops/omen/internal/userio"
+	"strings"
 )
 
 const applyChangesBody = `{
@@ -22,8 +21,10 @@ type ApplyChangesOptions struct {
 	TileSlugs      []string
 	NonInteractive bool
 	DryRun         bool
+	Quiet          bool
 }
 
+//go:generate counterfeiter . manifestsLoader
 type manifestsLoader interface {
 	LoadAll(status common.ProductStatus) (manifest.Manifests, error)
 	Load(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error)
@@ -39,32 +40,57 @@ type reportPrinter interface {
 	PrintReport(string)
 }
 
+//go:generate counterfeiter . opsmanClient
 type opsmanClient interface {
 	Post(endpoint, data string, timeout time.Duration) ([]byte, error)
 }
 
-func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinter, options ApplyChangesOptions) error {
-	tileGuids, err := slugsToGuids(options.TileSlugs, tl)
+type ApplyChangesOp interface {
+	Execute() error
+}
+
+type applyChangesOp struct {
+	manifestsLoader manifestsLoader
+	tilesLoader     tilesLoader
+	opsmanClient    opsmanClient
+	reportPrinter   reportPrinter
+	options         ApplyChangesOptions
+}
+
+func NewApplyChangesOp(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinter, options ApplyChangesOptions) ApplyChangesOp {
+	return &applyChangesOp{
+		manifestsLoader: ml,
+		tilesLoader:     tl,
+		opsmanClient:    c,
+		reportPrinter:   rp,
+		options:         options,
+	}
+}
+
+func (a *applyChangesOp) Execute() error {
+	tileGuids, err := a.slugsToGuids()
 	if err != nil {
 		return err
 	}
 
-	mDiff, err := printDiff(ml, tileGuids, rp)
+	if a.options.Quiet == false {
+		mDiff, err := a.printDiff(tileGuids)
 
-	if err != nil {
-		fmt.Println(err)
-		return err
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+
+		if len(mDiff) <= 0 || !a.options.DryRun {
+			fmt.Println("Warning: Opsman has detected no pending changes")
+		}
 	}
 
-	if options.DryRun {
+	if a.options.DryRun {
 		return nil
 	}
 
-	if len(mDiff) <= 0 {
-		fmt.Println("Warning: Opsman has detected no pending changes")
-	}
-
-	if options.NonInteractive == false {
+	if a.options.NonInteractive == false {
 		proceed := userio.GetConfirmation("Do you wish to continue (y/n)?")
 
 		if proceed == false {
@@ -75,6 +101,10 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinte
 		fmt.Println("Applying changes")
 	}
 
+	return a.applyChanges(tileGuids)
+}
+
+func (a *applyChangesOp) applyChanges(tileGuids []string) error {
 	var body string
 	if len(tileGuids) == 0 {
 		body = fmt.Sprintf(applyChangesBody, "all")
@@ -82,27 +112,31 @@ func Execute(ml manifestsLoader, tl tilesLoader, c opsmanClient, rp reportPrinte
 		body = fmt.Sprintf(applyChangesBody, strings.Join(tileGuids, ","))
 	}
 
-	resp, err := c.Post("/api/v0/installations", body, 10*time.Minute)
+	resp, err := a.opsmanClient.Post("/api/v0/installations", body, 10*time.Minute)
 	if err != nil {
 		fmt.Printf("An error occurred applying changes: %v \n", err)
 		return err
 	}
 
-	fmt.Printf("Successfully applied changes: %s \n", string(resp))
+	if a.options.Quiet {
+		a.reportPrinter.PrintReport(string(resp))
+	} else {
+		a.reportPrinter.PrintReport(fmt.Sprintf("Successfully applied changes: %s \n", string(resp)))
+	}
 	return nil
 }
 
-func slugsToGuids(slugs []string, tl tilesLoader) ([]string, error) {
-	if len(slugs) == 0 {
+func (a *applyChangesOp) slugsToGuids() ([]string, error) {
+	if len(a.options.TileSlugs) == 0 {
 		return []string{}, nil
 	}
 
-	tiles, err := tl.LoadStaged(false)
+	tiles, err := a.tilesLoader.LoadStaged(false)
 	if err != nil {
 		return nil, err
 	}
 	var resp []string
-	for _, s := range slugs {
+	for _, s := range a.options.TileSlugs {
 		t, err := tiles.FindBySlug(s)
 		if err != nil {
 			return nil, err
@@ -112,7 +146,7 @@ func slugsToGuids(slugs []string, tl tilesLoader) ([]string, error) {
 	return resp, nil
 }
 
-func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string, error) {
+func (a *applyChangesOp) printDiff(tileGuids []string) (string, error) {
 	var (
 		manifestA manifest.Manifests
 		manifestB manifest.Manifests
@@ -120,9 +154,9 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 	)
 
 	if len(tileGuids) == 0 {
-		manifestA, err = ml.LoadAll(common.DEPLOYED)
+		manifestA, err = a.manifestsLoader.LoadAll(common.DEPLOYED)
 	} else {
-		manifestA, err = ml.Load(common.DEPLOYED, tileGuids)
+		manifestA, err = a.manifestsLoader.Load(common.DEPLOYED, tileGuids)
 	}
 
 	if err != nil {
@@ -130,9 +164,9 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 	}
 
 	if len(tileGuids) == 0 {
-		manifestB, err = ml.LoadAll(common.STAGED)
+		manifestB, err = a.manifestsLoader.LoadAll(common.STAGED)
 	} else {
-		manifestB, err = ml.Load(common.STAGED, tileGuids)
+		manifestB, err = a.manifestsLoader.Load(common.STAGED, tileGuids)
 	}
 
 	if err != nil {
@@ -145,7 +179,7 @@ func printDiff(ml manifestsLoader, tileGuids []string, rp reportPrinter) (string
 		return "", err
 	}
 
-	rp.PrintReport(d)
+	a.reportPrinter.PrintReport(d)
 
 	return d, err
 }
