@@ -9,6 +9,7 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
+	"os"
 )
 
 var nonInteractive bool
@@ -44,9 +45,9 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 
 	var guids []string
 	if len(products) == 0 {
-		fmt.Println("Applying changes to all products")
+		printMessage("Applying changes to all products")
 	} else {
-		fmt.Println("Applying changes to these products:", products)
+		printMessage("Applying changes to these products:", products)
 		products = strings.TrimSpace(products)
 		for _, s := range strings.Split(products, ",") {
 			guids = append(guids, strings.TrimSpace(s))
@@ -65,5 +66,13 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 
 	if err != nil {
 		rp.Fail(err)
+	}
+}
+
+func printMessage(message... string) {
+	if quiet {
+		fmt.Fprintln(os.Stderr, message)
+	} else {
+		fmt.Println(message)
 	}
 }
