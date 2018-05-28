@@ -9,3 +9,4 @@ cd "$GOPATH/src/github.com/pivotal-cloudops/omen"
 
 dep ensure
 go test -v ./...
+go build -o omen-build/omen-linux64
