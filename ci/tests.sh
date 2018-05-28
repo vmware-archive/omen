@@ -6,7 +6,7 @@ cp -R git-omen "$GOPATH/src/github.com/pivotal-cloudops/omen"
 go get -u github.com/golang/dep/cmd/dep
 go get github.com/onsi/ginkgo/...
 
-
+export CGO_ENABLED=0
 OUTPUT_DIR=$(pwd)
 
 cd "$GOPATH/src/github.com/pivotal-cloudops/omen"
