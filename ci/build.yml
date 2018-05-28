@@ -16,7 +16,7 @@ run:
   - "go build -o omen-build/omen-linux64"
 
 outputs:
-- omen-build
+- name: omen-build
 
 params:
   GOOS: linux
