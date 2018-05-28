@@ -5,7 +5,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/gexec"
 
-	"os"
 	"testing"
 )
 
@@ -20,9 +19,6 @@ var (
 )
 
 var _ = BeforeSuite(func() {
-	os.Unsetenv("OPSMAN_USER")
-	os.Unsetenv("OPSMAN_PASSWORD")
-	os.Unsetenv("OPSMAN_HOSTNAME")
 	pathToOmenCLI, err = gexec.Build("github.com/pivotal-cloudops/omen")
 	Expect(err).ToNot(HaveOccurred())
 })

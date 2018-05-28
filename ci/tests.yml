@@ -1,6 +1,5 @@
 ---
 platform: linux
-
 image_resource:
   type: docker-image
   source:
@@ -8,12 +7,7 @@ image_resource:
     tag: 1.9
 
 inputs:
-  - name: opsman-snitch
+- name: git-omen
 
 run:
-  path: opsman-snitch/ci/tests.sh
-
-params:
-  OPSMAN_PASSWORD: replaceme
-  OPSMAN_USERNAME: replaceme
-  OPSMAN_URL: replaceme
+  path: git-omen/ci/tests.sh
