@@ -12,5 +12,5 @@ OUTPUT_DIR=$(pwd)
 cd "$GOPATH/src/github.com/pivotal-cloudops/omen"
 
 dep ensure
-go test -v ./...
+ginkgo -r
 go build -o ${OUTPUT_DIR}/omen-build/omen-linux64
