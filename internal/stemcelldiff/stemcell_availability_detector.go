@@ -116,23 +116,11 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 
 func (s *StemcellUpdateDetector) getStemcellUpdates() (stemcellUpdates, error) {
 	availableStemcellsPath := "/api/v0/pivotal_network/stemcell_updates"
-	req, err := http.NewRequest("GET", availableStemcellsPath, nil)
-
+	availableStemcells, err := s.getContentForOmPath(availableStemcellsPath)
 	if err != nil {
 		return stemcellUpdates{}, err
 	}
 
-	response, err := s.Client.Do(req)
-
-	if err != nil {
-		return stemcellUpdates{}, err
-	}
-
-	availableStemcells, err := ioutil.ReadAll(response.Body)
-
-	if err != nil {
-		return stemcellUpdates{}, err
-	}
 	var latestStemcells stemcellUpdates
 	err = json.Unmarshal(availableStemcells, &latestStemcells)
 	if err != nil {
@@ -144,20 +132,7 @@ func (s *StemcellUpdateDetector) getStemcellUpdates() (stemcellUpdates, error) {
 
 func (s *StemcellUpdateDetector) getStemcellAssignments() (stemcellAssignments, error) {
 	availableStemcellsPath := "/api/v0/stemcell_assignments"
-	req, err := http.NewRequest("GET", availableStemcellsPath, nil)
-
-	if err != nil {
-		return stemcellAssignments{}, err
-	}
-
-	response, err := s.Client.Do(req)
-
-	if err != nil {
-		return stemcellAssignments{}, err
-	}
-
-	availableStemcells, err := ioutil.ReadAll(response.Body)
-
+	availableStemcells, err := s.getContentForOmPath(availableStemcellsPath)
 	if err != nil {
 		return stemcellAssignments{}, err
 	}
@@ -169,6 +144,28 @@ func (s *StemcellUpdateDetector) getStemcellAssignments() (stemcellAssignments, 
 
 	return latestStemcells, nil
 
+}
+
+func (s *StemcellUpdateDetector) getContentForOmPath(path string) ([]byte, error) {
+	req, err := http.NewRequest("GET", path, nil)
+
+	if err != nil {
+		return nil, err
+	}
+
+	response, err := s.Client.Do(req)
+
+	if err != nil {
+		return nil, err
+	}
+
+	reply, err := ioutil.ReadAll(response.Body)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return reply, nil
 }
 
 func (s *stemcellAssignments) isStemcellDeployedForProduct(stemcellVersion string, productId string) bool {
