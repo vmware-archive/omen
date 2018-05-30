@@ -83,6 +83,7 @@ func init() {
 	rootCmd.AddCommand(applyChangesCmd)
 	rootCmd.AddCommand(stagedTilesCmd)
 	rootCmd.AddCommand(toggleErrandsCmd)
+	rootCmd.AddCommand(stemcellUpdatesCmd)
 }
 
 func Execute() {
