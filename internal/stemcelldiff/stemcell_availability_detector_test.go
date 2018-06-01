@@ -7,6 +7,7 @@ import (
 
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	. "github.com/Benjamintf1/Expanded-Unmarshalled-Matchers"
 	"github.com/onsi/ginkgo/extensions/table"
 	"github.com/pivotal-cloudops/omen/internal/stemcelldiff"
 	"github.com/pivotal-cloudops/omen/internal/stemcelldiff/stemcelldifffakes"
@@ -494,32 +495,44 @@ const (
   }`
 
 	fullDiff = `{
-        "available_stemcells": {
-          "3445.48": [
-            "pivotal-mysql-6a5d5d6c6c65b5b5d"
-          ],
-          "3468.46": [
-            "p-redis-a4de4d5a4bad5",
-            "p-healthwatch-876a87d6b6c8f7",
-            "stackdriver-nozzle-develop-89d98f67c76d7a97e6",
-            "p-event-alerts-78a765d675f55b5c65a6d5"
-          ],
-          "3541.30": [
-            "cf-97c6b6c7f53d2124"
-          ]
-        }
-      }`
+  "stemcell_updates": [
+    {
+      "stemcell_version": "3445.48",
+      "products": [
+        "pivotal-mysql-6a5d5d6c6c65b5b5d"
+      ]
+    },
+    {
+      "stemcell_version": "3468.46",
+      "products": [
+        "p-redis-a4de4d5a4bad5",
+        "p-healthwatch-876a87d6b6c8f7",
+        "stackdriver-nozzle-develop-89d98f67c76d7a97e6",
+        "p-event-alerts-78a765d675f55b5c65a6d5"
+      ]
+    },
+    {
+      "stemcell_version": "3541.30",
+      "products": [
+        "cf-97c6b6c7f53d2124"
+      ]
+    }
+  ]
+}`
 
 	mixedDiff = `{
-        "available_stemcells": {
-          "3468.46": [
-            "p-redis-a4de4d5a4bad5",
-            "p-healthwatch-876a87d6b6c8f7"
-          ]
-        }
-      }`
+  "stemcell_updates": [
+    {
+      "stemcell_version": "3468.46",
+      "products": [
+        "p-redis-a4de4d5a4bad5",
+      	"p-healthwatch-876a87d6b6c8f7"
+      ]
+    }
+  ]
+}`
 
-	emptyDiff = `{"available_stemcells": {}}`
+	emptyDiff = `{"stemcell_updates": []}`
 )
 
 var _ = Describe("StemcellAvailabilityDetector", func() {
@@ -542,7 +555,7 @@ var _ = Describe("StemcellAvailabilityDetector", func() {
 		detector := stemcelldiff.NewStemcellUpdateDetector(&client, &rep)
 		detector.DetectMissingStemcells()
 		output := rep.PrintReportArgsForCall(0)
-		Expect(output).To(MatchJSON(report))
+		Expect(output).To(MatchUnorderedJSON(report))
 	},
 		table.Entry("all stemcells are installed", newAssignments, emptyDiff),
 		table.Entry("some stemcells are installed", mixedAssignments, mixedDiff),

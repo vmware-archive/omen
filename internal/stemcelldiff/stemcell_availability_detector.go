@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-)
+	)
 
 type stemcellProduct struct {
 	Guid                      string   `json:"guid"`
@@ -51,16 +51,16 @@ type availableStemcellEntry struct {
 	Products        []string `json:"products"`
 }
 
-type availableStemcellOutput struct {
-	AvailableStemcells map[string][]string `json:"available_stemcells"`
+type availableStemcellUpdates struct {
+	StemcellUpdates []availableStemcellEntry `json:"stemcell_updates"`
 }
 
-func (o *availableStemcellOutput) register(stemcell string, product string) {
-	if o.AvailableStemcells[stemcell] == nil {
-		o.AvailableStemcells[stemcell] = []string{product}
-	} else {
-		o.AvailableStemcells[stemcell] = append(o.AvailableStemcells[stemcell], product)
-	}
+type availableStemcells struct {
+	AvailableStemcells map[string][]string `json:"stemcell_updates"`
+}
+
+func (o *availableStemcells) register(stemcell string, product string) {
+	o.AvailableStemcells[stemcell] = append(o.AvailableStemcells[stemcell], product)
 }
 
 //go:generate counterfeiter . httpClient
@@ -93,7 +93,7 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 		return err
 	}
 
-	output := &availableStemcellOutput{}
+	output := &availableStemcells{}
 	output.AvailableStemcells = map[string][]string{}
 
 	for _, updateEntry := range updates.StemcellUpdates {
@@ -101,10 +101,17 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 			if assignments.isStemcellDeployedForProduct(updateEntry.StemcellVersion, updateProduct.ProductId) {
 				break
 			}
+
 			output.register(updateEntry.StemcellVersion, updateProduct.ProductId)
 		}
 	}
-	outputBytes, err := json.Marshal(output)
+	a := availableStemcellUpdates{StemcellUpdates: []availableStemcellEntry{}}
+
+	for version, products := range output.AvailableStemcells {
+		a.StemcellUpdates = append(a.StemcellUpdates, availableStemcellEntry{StemcellVersion:version, Products:products})
+	}
+
+	outputBytes, err := json.Marshal(&a)
 	if err != nil {
 		return err
 	}
