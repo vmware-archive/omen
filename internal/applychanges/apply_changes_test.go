@@ -16,27 +16,42 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/tile"
 )
 
+var (
+	twoTiles = tile.Tiles{
+		Data: []*tile.Tile{
+			{
+				GUID: "guid1",
+				Type: "product1",
+			},
+			{
+				GUID: "guid2",
+				Type: "product2",
+			},
+		},
+	}
+)
+
 var _ = Describe("Apply Changes - Execute", func() {
 	var mockClient *applychangesfakes.FakeOpsmanClient
+	var reportPrinter *applychangesfakes.FakeReportPrinter
 
 	BeforeEach(func() {
 		mockClient = &applychangesfakes.FakeOpsmanClient{}
+		reportPrinter = &applychangesfakes.FakeReportPrinter{}
 	})
-
-	defReportPrinter := &applychangesfakes.FakeReportPrinter{}
 
 	It("Applies all changes by default", func() {
 		manifests := manifest.Manifests{}
 
-		mloader := &applychangesfakes.FakeManifestsLoader{
+		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
 				return manifests, nil
 			},
 		}
 
-		tloader := fakes.FakeTilesLoader{}
+		tilesLoader := fakes.FakeTilesLoader{}
 
-		subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false, false})
+		subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{}, NonInteractive: true})
 		subject.Execute()
 
 		postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
@@ -44,23 +59,44 @@ var _ = Describe("Apply Changes - Execute", func() {
 		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
 	})
 
-	It("Applies changes with no difference between staged and deployed", func() {
-		manifests := manifest.Manifests{}
+	Describe("no changes between staged and deployed", func() {
+		var manifests manifest.Manifests
+		var manifestLoader *applychangesfakes.FakeManifestsLoader
+		var tilesLoader fakes.FakeTilesLoader
+		var subject applychanges.ApplyChangesOp
 
-		mloader := &applychangesfakes.FakeManifestsLoader{
-			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-				return manifests, nil
-			},
-		}
+		BeforeEach(func() {
+			manifests = manifest.Manifests{}
+			manifestLoader = &applychangesfakes.FakeManifestsLoader{
+				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
+					return manifests, nil
+				},
+			}
+			tilesLoader = fakes.FakeTilesLoader{}
+			subject = applychanges.NewApplyChangesOp(
+				manifestLoader,
+				tilesLoader,
+				mockClient,
+				reportPrinter,
+				applychanges.ApplyChangesOptions{TileSlugs: []string{}, NonInteractive: true})
+		})
 
-		tloader := fakes.FakeTilesLoader{}
+		It("applies changes", func() {
+			subject.Execute()
 
-		subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false, false})
-		subject.Execute()
+			postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
+			Expect(postedUrl).To(Equal("/api/v0/installations"))
+			Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+		})
 
-		postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
-		Expect(postedUrl).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+		It("produces a warning for a full run", func() {
+			subject.Execute()
+
+			Expect(reportPrinter.Invocations()).To(HaveLen(1))
+			warning := reportPrinter.PrintReportArgsForCall(0)
+			Expect(warning).To(ContainSubstring("Warning:"))
+			Expect(warning).To(ContainSubstring("no pending changes"))
+		})
 	})
 
 	It("Applies changes with difference between staged and deployed", func() {
@@ -79,9 +115,9 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		tloader := fakes.FakeTilesLoader{}
+		tilesLoader := fakes.FakeTilesLoader{}
 
-		mloader := &applychangesfakes.FakeManifestsLoader{
+		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
 				if status == common.DEPLOYED {
 					return deployedManifests, nil
@@ -90,7 +126,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false, false})
+		subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{}, NonInteractive: true})
 		subject.Execute()
 
 		postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
@@ -114,7 +150,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		mloader := &applychangesfakes.FakeManifestsLoader{
+		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
 				if status == common.DEPLOYED {
 					return deployedManifests, nil
@@ -123,12 +159,11 @@ var _ = Describe("Apply Changes - Execute", func() {
 			},
 		}
 
-		tloader := fakes.FakeTilesLoader{}
+		tilesLoader := fakes.FakeTilesLoader{}
 
-		rp := &applychangesfakes.FakeReportPrinter{}
-		subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true, false, false})
+		subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{}, NonInteractive: true})
 		subject.Execute()
-		diff := rp.PrintReportArgsForCall(0)
+		diff := reportPrinter.PrintReportArgsForCall(0)
 		Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 	})
 
@@ -136,31 +171,20 @@ var _ = Describe("Apply Changes - Execute", func() {
 		It("applies changes to specified products", func() {
 			fetchTileMetadata := true
 			manifests := manifest.Manifests{}
-			mloader := &applychangesfakes.FakeManifestsLoader{
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifests, nil
 				},
 			}
 
-			tloader := fakes.FakeTilesLoader{
+			tilesLoader := fakes.FakeTilesLoader{
 				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
 					fetchTileMetadata = b
-					return tile.Tiles{
-						Data: []*tile.Tile{
-							{
-								GUID: "guid1",
-								Type: "product1",
-							},
-							{
-								GUID: "guid2",
-								Type: "product2",
-							},
-						},
-					}, nil
+					return twoTiles, nil
 				},
 			}
 
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true, false, false})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{"product1", "product2"}, NonInteractive: true})
 			subject.Execute()
 
 			Expect(fetchTileMetadata).To(BeFalse())
@@ -171,30 +195,19 @@ var _ = Describe("Apply Changes - Execute", func() {
 		})
 
 		It("fails when slug not found", func() {
-			mloader := &applychangesfakes.FakeManifestsLoader{
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifest.Manifests{}, nil
 				},
 			}
 
-			tloader := fakes.FakeTilesLoader{
+			tilesLoader := fakes.FakeTilesLoader{
 				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
-					return tile.Tiles{
-						Data: []*tile.Tile{
-							{
-								GUID: "guid1",
-								Type: "product1",
-							},
-							{
-								GUID: "guid2",
-								Type: "product2",
-							},
-						},
-					}, nil
+					return twoTiles, nil
 				},
 			}
 
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3", "product2"}, true, false, false})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{"product3", "product2"}, NonInteractive: true})
 			err := subject.Execute()
 
 			Expect(err).To(HaveOccurred())
@@ -203,19 +216,19 @@ var _ = Describe("Apply Changes - Execute", func() {
 		})
 
 		It("fails when tile loading fails", func() {
-			mloader := &applychangesfakes.FakeManifestsLoader{
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
 					return manifest.Manifests{}, nil
 				},
 			}
 
-			tloader := fakes.FakeTilesLoader{
+			tilesLoader := fakes.FakeTilesLoader{
 				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
 					return tile.Tiles{}, errors.New("can't load tiles")
 				},
 			}
 
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, defReportPrinter, applychanges.ApplyChangesOptions{[]string{"product3"}, true, false, false})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{"product3"}, NonInteractive: true})
 			err := subject.Execute()
 
 			Expect(err).To(HaveOccurred())
@@ -225,14 +238,14 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		It("prints out the diff for only the tiles being deployed", func() {
 
-			mloader := &applychangesfakes.FakeManifestsLoader{
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 
 				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
 					return manifest.Manifests{}, errors.New("loadAll should not be called")
 				},
 
 				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					if status == common.DEPLOYED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
+					if status == common.DEPLOYED && reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{
@@ -245,7 +258,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 						}, nil
 					}
 
-					if status == common.STAGED && reflect.DeepEqual(tileGuids, []string{"product1", "product2"}) {
+					if status == common.STAGED && reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{
@@ -262,28 +275,15 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			tloader := fakes.FakeTilesLoader{
+			tilesLoader := fakes.FakeTilesLoader{
 				StagedResponseFunc: func(b bool) (tile.Tiles, error) {
-					return tile.Tiles{
-						Data: []*tile.Tile{
-							{
-								Type: "product1",
-								GUID: "product1",
-							},
-							{
-								Type: "product2",
-								GUID: "product2",
-							},
-						},
-					}, nil
+					return twoTiles, nil
 				},
 			}
 
-			rp := &applychangesfakes.FakeReportPrinter{}
-
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{"product1", "product2"}, true, false, false})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{"product1", "product2"}, NonInteractive: true})
 			subject.Execute()
-			diff := rp.PrintReportArgsForCall(0)
+			diff := reportPrinter.PrintReportArgsForCall(0)
 
 			expectedDiff, err := ioutil.ReadFile("testdata/diff.txt")
 			Expect(err).ToNot(HaveOccurred())
@@ -310,7 +310,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			mloader := &applychangesfakes.FakeManifestsLoader{
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
 					if status == common.DEPLOYED {
 						return deployedManifests, nil
@@ -319,12 +319,11 @@ var _ = Describe("Apply Changes - Execute", func() {
 				},
 			}
 
-			tloader := fakes.FakeTilesLoader{}
+			tilesLoader := fakes.FakeTilesLoader{}
 
-			rp := &applychangesfakes.FakeReportPrinter{}
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true, true, false})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, true, false})
 			subject.Execute()
-			diff := rp.PrintReportArgsForCall(0)
+			diff := reportPrinter.PrintReportArgsForCall(0)
 			Expect(diff).To(Equal("-manifests.deployed.name=deployed\n+manifests.staged.name=staged\n"))
 
 			Expect(mockClient.PostCallCount()).To(BeZero())
@@ -335,17 +334,16 @@ var _ = Describe("Apply Changes - Execute", func() {
 		It("only outputs the return of ops manager apply changes", func() {
 			applyChangesReply := `{"install":{"id": 303}}`
 
-			tloader := fakes.FakeTilesLoader{}
-			rp := &applychangesfakes.FakeReportPrinter{}
-			mloader := &applychangesfakes.FakeManifestsLoader{}
+			tilesLoader := fakes.FakeTilesLoader{}
+			manifestsLoader := &applychangesfakes.FakeManifestsLoader{}
 
 			mockClient.PostReturns([]byte(applyChangesReply), nil)
 
-			subject := applychanges.NewApplyChangesOp(mloader, tloader, mockClient, rp, applychanges.ApplyChangesOptions{[]string{}, true, false, true})
+			subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{[]string{}, true, false, true})
 			subject.Execute()
-			Expect(rp.PrintReportCallCount()).To(Equal(1))
+			Expect(reportPrinter.PrintReportCallCount()).To(Equal(1))
 
-			Expect(rp.PrintReportArgsForCall(0)).To(MatchJSON(applyChangesReply))
+			Expect(reportPrinter.PrintReportArgsForCall(0)).To(MatchJSON(applyChangesReply))
 		})
 	})
 

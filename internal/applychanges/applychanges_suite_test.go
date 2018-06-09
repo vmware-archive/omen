@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestApplychanges(t *testing.T) {
+func TestApplyChanges(t *testing.T) {
 	RegisterFailHandler(Fail)
-	RunSpecs(t, "Applychanges Suite")
+	RunSpecs(t, "Apply Changes Suite")
 }

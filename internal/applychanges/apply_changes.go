@@ -73,16 +73,18 @@ func (a *applyChangesOp) Execute() error {
 		return err
 	}
 
-	if a.options.Quiet == false {
-		mDiff, err := a.printDiff(tileGuids)
+	if a.shouldPrintOutput() {
+		manifestDiff, err := a.makeDiff(tileGuids)
 
 		if err != nil {
 			fmt.Println(err)
 			return err
 		}
 
-		if len(mDiff) <= 0 || !a.options.DryRun {
-			fmt.Println("Warning: Opsman has detected no pending changes")
+		if len(manifestDiff) > 0 {
+			a.reportPrinter.PrintReport(manifestDiff)
+		} else if a.isNotADryRun() {
+			a.reportPrinter.PrintReport("Warning: Opsman has detected no pending changes")
 		}
 	}
 
@@ -90,7 +92,7 @@ func (a *applyChangesOp) Execute() error {
 		return nil
 	}
 
-	if a.options.NonInteractive == false {
+	if a.isInteractive() {
 		proceed := userio.GetConfirmation("Do you wish to continue (y/n)?")
 
 		if proceed == false {
@@ -102,6 +104,18 @@ func (a *applyChangesOp) Execute() error {
 	}
 
 	return a.applyChanges(tileGuids)
+}
+
+func (a *applyChangesOp) isInteractive() bool {
+	return a.options.NonInteractive == false
+}
+
+func (a *applyChangesOp) shouldPrintOutput() bool {
+	return a.options.Quiet == false
+}
+
+func (a *applyChangesOp) isNotADryRun() bool {
+	return a.options.DryRun == false
 }
 
 func (a *applyChangesOp) applyChanges(tileGuids []string) error {
@@ -146,7 +160,7 @@ func (a *applyChangesOp) slugsToGuids() ([]string, error) {
 	return resp, nil
 }
 
-func (a *applyChangesOp) printDiff(tileGuids []string) (string, error) {
+func (a *applyChangesOp) makeDiff(tileGuids []string) (string, error) {
 	var (
 		manifestA manifest.Manifests
 		manifestB manifest.Manifests
@@ -178,8 +192,6 @@ func (a *applyChangesOp) printDiff(tileGuids []string) (string, error) {
 	if err != nil {
 		return "", err
 	}
-
-	a.reportPrinter.PrintReport(d)
 
 	return d, err
 }
