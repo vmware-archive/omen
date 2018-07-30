@@ -14,17 +14,6 @@ const (
 	defaultTogglerAction = errandStateDisabled
 )
 
-//go:generate counterfeiter . errandService
-type errandService interface {
-	List(productID string) (api.ErrandsListOutput, error)
-	SetState(productID string, errandName string, postDeployState interface{}, preDeleteState interface{}) error
-}
-
-//go:generate counterfeiter . reporter
-type reporter interface {
-	PrintReport(report string)
-}
-
 type ErrandToggler interface {
 	Execute(products []string) error
 	Disable() ErrandToggler
