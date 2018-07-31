@@ -3,23 +3,23 @@ package errands_test
 import (
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
+	"github.com/pivotal-cf/om/api"
 	. "github.com/pivotal-cloudops/omen/internal/errands"
 	"github.com/pivotal-cloudops/omen/internal/errands/errandsfakes"
-	"github.com/pivotal-cf/om/api"
 	"errors"
 )
 
 var (
 	subject ErrandReporter
 	es      *errandsfakes.FakeErrandService
-	rp      *errandsfakes.FakeReporter
+	rp      *errandsfakes.FakeTableReporter
 )
 
 var _ = Describe("ErrandReporter", func() {
 
 	BeforeEach(func() {
 		es = &errandsfakes.FakeErrandService{}
-		rp = &errandsfakes.FakeReporter{}
+		rp = &errandsfakes.FakeTableReporter{}
 		subject = NewErrandReporter(es, rp)
 	})
 
@@ -55,10 +55,9 @@ var _ = Describe("ErrandReporter", func() {
 	It("Reports no errands", func() {
 		subject.Execute([]string{"a"})
 
-		Expect(rp.PrintReportCallCount()).To(Equal(3))
-		Expect(rp.PrintReportArgsForCall(0)).To(HavePrefix("Listing errands for product: a"))
-		Expect(rp.PrintReportArgsForCall(1)).To(Equal("No errands defined"))
-		Expect(rp.PrintReportArgsForCall(2)).To(HavePrefix("----------------"))
+		Expect(rp.WriteCallCount()).To(Equal(2))
+		Expect(string(rp.WriteArgsForCall(0))).To(HavePrefix("a"))
+		Expect(string(rp.WriteArgsForCall(1))).To(HavePrefix("No errands defined"))
 	})
 
 	It("reports the errands appropriately", func() {
@@ -81,13 +80,25 @@ var _ = Describe("ErrandReporter", func() {
 
 		subject.Execute([]string{"jam"})
 
-		Expect(rp.PrintReportCallCount()).To(Equal(4))
-		Expect(rp.PrintReportArgsForCall(1)).To(HavePrefix("Errand name: as-i-have-remembered; Post-deploy enabled: yes; Pre-delete enabled: no"))
-		Expect(rp.PrintReportArgsForCall(2)).To(HavePrefix("Errand name: rhubarb; Post-deploy enabled: no; Pre-delete enabled: yes"))
-		Expect(rp.PrintReportArgsForCall(3)).To(HavePrefix("---------------"))
+		Expect(rp.WriteCallCount()).To(Equal(6))
+		Expect(string(rp.WriteArgsForCall(0))).To(HavePrefix("jam"))
+		Expect(string(rp.WriteArgsForCall(1))).To(HavePrefix("Name\tPost-deploy\tPre-delete"))
+		Expect(string(rp.WriteArgsForCall(3))).To(HavePrefix("as-i-have-remembered\tyes\tno"))
+		Expect(string(rp.WriteArgsForCall(4))).To(HavePrefix("rhubarb\tno\tyes"))
 	})
 
-	It("reports the default state", func() {
+	It("flushes the reporter at the end", func() {
+		rp.FlushStub = func() error {
+			Expect(rp.WriteCallCount()).To(Equal(2))
+			return nil
+		}
+
+		subject.Execute([]string{"blah"})
+
+		Expect(rp.FlushCallCount()).To(Equal(1))
+	})
+
+	It("reports the undefined state", func() {
 		errands := api.ErrandsListOutput{
 			Errands: []api.Errand{
 				{
@@ -98,16 +109,16 @@ var _ = Describe("ErrandReporter", func() {
 		es.ListReturns(errands, nil)
 
 		subject.Execute([]string{"nuclear"})
-		Expect(rp.PrintReportArgsForCall(1)).To(HavePrefix("Errand name: spatii; Post-deploy enabled: default; Pre-delete enabled: default"))
+		Expect(string(rp.WriteArgsForCall(3))).To(HavePrefix("spatii\t~\t~"))
 	})
 
 	It("reports custom state", func() {
 		errands := api.ErrandsListOutput{
 			Errands: []api.Errand{
 				{
-					Name: "cow",
+					Name:       "cow",
 					PostDeploy: "dogma",
-					PreDelete: "lotus",
+					PreDelete:  "lotus",
 				},
 			},
 		}
@@ -115,7 +126,7 @@ var _ = Describe("ErrandReporter", func() {
 
 		subject.Execute([]string{"jazz"})
 
-		Expect(rp.PrintReportArgsForCall(1)).To(HavePrefix("Errand name: cow; Post-deploy enabled: dogma; Pre-delete enabled: lotus"))
+		Expect(string(rp.WriteArgsForCall(3))).To(HavePrefix("cow\tdogma\tlotus"))
 
 	})
 })

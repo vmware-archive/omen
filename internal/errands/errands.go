@@ -14,3 +14,9 @@ type errandService interface {
 type reporter interface {
 	PrintReport(report string)
 }
+
+//go:generate counterfeiter . tableReporter
+type tableReporter interface {
+	Write([]byte) (int, error)
+	Flush() error
+}
