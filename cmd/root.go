@@ -5,10 +5,10 @@ import (
 	"os"
 
 	"github.com/pivotal-cloudops/omen/internal/opsman"
+	"github.com/pivotal-cloudops/omen/internal/sessions"
 	"github.com/pivotal-cloudops/omen/internal/userio"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	"github.com/pivotal-cloudops/omen/internal/sessions"
 )
 
 const (
@@ -27,6 +27,7 @@ const (
 )
 
 var rp = userio.ReportPrinter{}
+var tr = userio.NewTableReporter()
 
 var rootCmd = &cobra.Command{
 	Use:   "omen",
@@ -84,6 +85,7 @@ func init() {
 	rootCmd.AddCommand(stagedTilesCmd)
 	rootCmd.AddCommand(toggleErrandsCmd)
 	rootCmd.AddCommand(stemcellUpdatesCmd)
+	rootCmd.AddCommand(errandsCmd)
 }
 
 func Execute() {
