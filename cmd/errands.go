@@ -28,16 +28,36 @@ var errandsFunc = func(*cobra.Command, []string) {
 	c := setupOpsmanClient()
 	es := api.NewErrandsService(c)
 	et := errands.NewErrandReporter(es, tr)
+	tl := tile.NewTilesLoader(c)
 
 	if len(errandProducts) > 0 {
-		err := et.Execute(errandProducts)
+		guids, err := mapGuid(tl, errandProducts)
+
+		if err != nil {
+			rp.Fail(err)
+		}
+
+		err = et.Execute(guids)
+
 		if err != nil {
 			rp.Fail(err)
 		}
 	} else {
-		tl := tile.NewTilesLoader(c)
 		reportAllErrands(tl, et)
 	}
+}
+
+func mapGuid(tl tile.Loader, productNames []string) ([]string, error) {
+	var guids []string
+	deployedProducts, err := tl.LoadDeployed(false)
+	for _, product := range productNames {
+		_tile, err := deployedProducts.FindBySlug(product)
+		if err != nil {
+			return nil, err
+		}
+		guids = append(guids, _tile.GUID)
+	}
+	return guids, err
 }
 
 func reportAllErrands(tl tile.Loader, er errands.ErrandReporter) {
