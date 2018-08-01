@@ -2,10 +2,11 @@ package tile
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"os"
+
 	"github.com/pkg/errors"
-	"fmt"
 )
 
 type Tiles struct {
@@ -16,6 +17,7 @@ type Tile struct {
 	InstallationName string                 `json:"installation_name,omitempty"`
 	GUID             string                 `json:"guid,omitempty"`
 	Type             string                 `json:"type,omitempty"`
+	ProductVersion   string                 `json:"product_version,omitempty"`
 	Networks         map[string]interface{} `json:"networks_and_azs,omitempty"`
 	Errands          map[string]interface{} `json:"errands,omitempty"`
 	Properties       map[string]interface{} `json:"properties,omitempty"`

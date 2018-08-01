@@ -60,6 +60,7 @@ var _ = Describe("Tiles Loader", func() {
 			Expect(tile.InstallationName).To(Equal("cf-4f9edbd1992fd81250e5"))
 			Expect(tile.GUID).To(Equal("guid"))
 			Expect(tile.Type).To(Equal("cf"))
+			Expect(tile.ProductVersion).To(Equal("1.12.0.0"))
 			Expect(tile.Networks["networks_and_azs"]).To(BeNil())
 			Expect(tile.Errands["errands"]).To(BeNil())
 			Expect(tile.Resources["resources"]).To(BeNil())
