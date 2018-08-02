@@ -8,10 +8,12 @@ import (
 )
 
 type FakeTilesLoader struct {
-	LoadDeployedStub        func() (tile.Tiles, error)
+	LoadDeployedStub        func(bool) (tile.Tiles, error)
 	loadDeployedMutex       sync.RWMutex
-	loadDeployedArgsForCall []struct{}
-	loadDeployedReturns     struct {
+	loadDeployedArgsForCall []struct {
+		arg1 bool
+	}
+	loadDeployedReturns struct {
 		result1 tile.Tiles
 		result2 error
 	}
@@ -23,14 +25,16 @@ type FakeTilesLoader struct {
 	invocationsMutex sync.RWMutex
 }
 
-func (fake *FakeTilesLoader) LoadDeployed() (tile.Tiles, error) {
+func (fake *FakeTilesLoader) LoadDeployed(arg1 bool) (tile.Tiles, error) {
 	fake.loadDeployedMutex.Lock()
 	ret, specificReturn := fake.loadDeployedReturnsOnCall[len(fake.loadDeployedArgsForCall)]
-	fake.loadDeployedArgsForCall = append(fake.loadDeployedArgsForCall, struct{}{})
-	fake.recordInvocation("LoadDeployed", []interface{}{})
+	fake.loadDeployedArgsForCall = append(fake.loadDeployedArgsForCall, struct {
+		arg1 bool
+	}{arg1})
+	fake.recordInvocation("LoadDeployed", []interface{}{arg1})
 	fake.loadDeployedMutex.Unlock()
 	if fake.LoadDeployedStub != nil {
-		return fake.LoadDeployedStub()
+		return fake.LoadDeployedStub(arg1)
 	}
 	if specificReturn {
 		return ret.result1, ret.result2
@@ -42,6 +46,12 @@ func (fake *FakeTilesLoader) LoadDeployedCallCount() int {
 	fake.loadDeployedMutex.RLock()
 	defer fake.loadDeployedMutex.RUnlock()
 	return len(fake.loadDeployedArgsForCall)
+}
+
+func (fake *FakeTilesLoader) LoadDeployedArgsForCall(i int) bool {
+	fake.loadDeployedMutex.RLock()
+	defer fake.loadDeployedMutex.RUnlock()
+	return fake.loadDeployedArgsForCall[i].arg1
 }
 
 func (fake *FakeTilesLoader) LoadDeployedReturns(result1 tile.Tiles, result2 error) {

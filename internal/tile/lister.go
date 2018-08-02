@@ -11,7 +11,7 @@ const reportHeader = "Name\tGUID\tVersion\n----\t----\t-------\n"
 
 //go:generate counterfeiter . tilesLoader
 type tilesLoader interface {
-	LoadDeployed() (Tiles, error)
+	LoadDeployed(bool) (Tiles, error)
 }
 
 //go:generate counterfeiter . tableReporter
@@ -25,7 +25,7 @@ func NewTileLister(tl tilesLoader, ui tableReporter) Lister {
 }
 
 func (l Lister) Execute() error {
-	tiles, err := l.loader.LoadDeployed()
+	tiles, err := l.loader.LoadDeployed(false)
 	if err != nil {
 		return err
 	}
