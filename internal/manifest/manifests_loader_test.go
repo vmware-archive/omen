@@ -9,14 +9,13 @@ import (
 	. "github.com/onsi/ginkgo/extensions/table"
 	. "github.com/onsi/gomega"
 
-	"github.com/pivotal-cloudops/omen/internal/fakes"
+		"github.com/pivotal-cloudops/omen/internal/fakes"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
-	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var _ = Describe("Manifests loader", func() {
-	DescribeTable("Load all manifests", func(status common.ProductStatus) {
+	DescribeTable("Load all manifests", func(status string) {
 		fakeOMClient := fakes.FakeOMClient{
 			GetFunc: func(endpoint string) ([]byte, error) {
 				switch endpoint {
@@ -42,7 +41,11 @@ var _ = Describe("Manifests loader", func() {
 			err       error
 		)
 
-		manifests, err = loader.LoadAll(status)
+		if status == "deployed" {
+			manifests, err = loader.LoadAllDeployed()
+		} else {
+			manifests, err = loader.LoadAllStaged()
+		}
 
 		Expect(err).ToNot(HaveOccurred())
 		Expect(manifests.Data).To(HaveLen(2))
@@ -67,19 +70,19 @@ var _ = Describe("Manifests loader", func() {
 
 		Expect(manifests.CloudConfig).ToNot(BeEmpty())
 	},
-		Entry("should load staged", common.STAGED),
-		Entry("should load deployed", common.DEPLOYED))
+		Entry("should load staged", "staged"),
+		Entry("should load deployed", "deployed"))
 
 	Describe("load", func() {
 		It("fetches the staged manifests for the specific tile guids", func() {
 			fakeOMClient := fakes.FakeOMClient{
 				GetFunc: func(endpoint string) ([]byte, error) {
 					switch endpoint {
-					case fmt.Sprintf("/api/v0/%s/products", common.STAGED):
+					case "/api/v0/staged/products":
 						return ioutil.ReadFile("testdata/tiles.json")
-					case fmt.Sprintf("/api/v0/%s/products/guid/manifest", common.STAGED):
-						return ioutil.ReadFile(fmt.Sprintf("testdata/%s/manifest.json", common.STAGED))
-					case fmt.Sprintf("/api/v0/%s/cloud_config", common.STAGED):
+					case "/api/v0/staged/products/guid/manifest":
+						return ioutil.ReadFile("testdata/staged/manifest.json")
+					case "/api/v0/staged/cloud_config":
 						return ioutil.ReadFile("testdata/cloud_config.json")
 					default:
 						return nil, errors.New(fmt.Sprintf("invalid endpoint %v", endpoint))
@@ -90,7 +93,7 @@ var _ = Describe("Manifests loader", func() {
 			tl := tile.NewTilesLoader(fakeOMClient)
 			loader := manifest.NewManifestsLoader(fakeOMClient, tl)
 
-			manifests, err := loader.Load(common.STAGED, []string{"guid"})
+			manifests, err := loader.LoadStaged([]string{"guid"})
 			Expect(err).ToNot(HaveOccurred())
 			Expect(len(manifests.Data)).To(Equal(1))
 
@@ -120,7 +123,7 @@ var _ = Describe("Manifests loader", func() {
 		tl := tile.NewTilesLoader(fakeOMClient)
 		loader := manifest.NewManifestsLoader(fakeOMClient, tl)
 
-		_, err := loader.LoadAll(common.DEPLOYED)
+		_, err := loader.LoadAllDeployed()
 		Expect(err).To(HaveOccurred())
 		Expect(err.Error()).To(Equal("cloud config error"))
 	})
@@ -139,7 +142,7 @@ var _ = Describe("Manifests loader", func() {
 		}
 
 		loader := manifest.NewManifestsLoader(fakeOMClient, tl)
-		_, err := loader.LoadAll(common.DEPLOYED)
+		_, err := loader.LoadAllDeployed()
 		Expect(err).To(HaveOccurred())
 	})
 
@@ -158,7 +161,7 @@ var _ = Describe("Manifests loader", func() {
 
 		tl := tile.NewTilesLoader(fakeOMClient)
 		loader := manifest.NewManifestsLoader(fakeOMClient, tl)
-		_, err := loader.LoadAll(common.DEPLOYED)
+		_, err := loader.LoadAllDeployed()
 		Expect(err).To(HaveOccurred())
 
 	})

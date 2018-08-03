@@ -1,13 +1,10 @@
 package tile_test
 
 import (
-	"io/ioutil"
-
-	"errors"
-
-	"fmt"
-
 	"encoding/json"
+	"errors"
+	"fmt"
+	"io/ioutil"
 
 	"github.com/kylelemons/godebug/pretty"
 	. "github.com/onsi/ginkgo"
@@ -15,7 +12,6 @@ import (
 	. "github.com/onsi/gomega"
 	"github.com/pivotal-cloudops/omen/internal/fakes"
 	"github.com/pivotal-cloudops/omen/internal/tile"
-	"github.com/pivotal-cloudops/omen/internal/common"
 )
 
 var _ = Describe("Tiles Loader", func() {
@@ -70,7 +66,7 @@ var _ = Describe("Tiles Loader", func() {
 
 	Context("loading with metadata", func() {
 
-		DescribeTable("should load", func(status common.ProductStatus) {
+		DescribeTable("should load", func(status string) {
 			fakeOMClient := fakes.FakeOMClient{
 				GetFunc: func(endpoint string) ([]byte, error) {
 					switch endpoint {
@@ -98,9 +94,9 @@ var _ = Describe("Tiles Loader", func() {
 			)
 
 			switch status {
-			case common.STAGED:
+			case "staged":
 				tiles, err = loader.LoadStaged(true)
-			case common.DEPLOYED:
+			case "deployed":
 				tiles, err = loader.LoadDeployed(true)
 			default:
 				err = errors.New("invalid product status")
@@ -119,8 +115,8 @@ var _ = Describe("Tiles Loader", func() {
 			diff := pretty.Compare(actualTile, expectedTile)
 			Expect(diff).To(BeEmpty())
 		},
-			Entry("staged", common.STAGED),
-			Entry("deployed", common.DEPLOYED))
+			Entry("staged", "staged"),
+			Entry("deployed", "deployed"))
 
 	})
 

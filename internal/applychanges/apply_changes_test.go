@@ -10,7 +10,6 @@ import (
 
 	"github.com/pivotal-cloudops/omen/internal/applychanges"
 	"github.com/pivotal-cloudops/omen/internal/applychanges/applychangesfakes"
-	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/fakes"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
@@ -44,9 +43,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		manifests := manifest.Manifests{}
 
 		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-				return manifests, nil
-			},
+			LoadAllDeployedStub: loadAllManifestsStub(manifests, nil),
+			LoadAllStagedStub:   loadAllManifestsStub(manifests, nil),
 		}
 
 		tilesLoader := fakes.FakeTilesLoader{}
@@ -68,9 +66,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		BeforeEach(func() {
 			manifests = manifest.Manifests{}
 			manifestLoader = &applychangesfakes.FakeManifestsLoader{
-				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-					return manifests, nil
-				},
+				LoadAllDeployedStub: loadAllManifestsStub(manifests, nil),
+				LoadAllStagedStub:   loadAllManifestsStub(manifests, nil),
 			}
 			tilesLoader = fakes.FakeTilesLoader{}
 			subject = applychanges.NewApplyChangesOp(
@@ -118,12 +115,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		tilesLoader := fakes.FakeTilesLoader{}
 
 		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-				if status == common.DEPLOYED {
-					return deployedManifests, nil
-				}
-				return stagedManifests, nil
-			},
+			LoadAllDeployedStub: loadAllManifestsStub(deployedManifests, nil),
+			LoadAllStagedStub:   loadAllManifestsStub(stagedManifests, nil),
 		}
 
 		subject := applychanges.NewApplyChangesOp(manifestsLoader, tilesLoader, mockClient, reportPrinter, applychanges.ApplyChangesOptions{TileSlugs: []string{}, NonInteractive: true})
@@ -151,12 +144,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 		}
 
 		manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-			LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-				if status == common.DEPLOYED {
-					return deployedManifests, nil
-				}
-				return stagedManifests, nil
-			},
+			LoadAllDeployedStub: loadAllManifestsStub(deployedManifests, nil),
+			LoadAllStagedStub:   loadAllManifestsStub(stagedManifests, nil),
 		}
 
 		tilesLoader := fakes.FakeTilesLoader{}
@@ -171,10 +160,10 @@ var _ = Describe("Apply Changes - Execute", func() {
 		It("applies changes to specified products", func() {
 			fetchTileMetadata := true
 			manifests := manifest.Manifests{}
+
 			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					return manifests, nil
-				},
+				LoadStagedStub:   loadManifestsStub(manifests, nil),
+				LoadDeployedStub: loadManifestsStub(manifests, nil),
 			}
 
 			tilesLoader := fakes.FakeTilesLoader{
@@ -196,9 +185,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		It("fails when slug not found", func() {
 			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					return manifest.Manifests{}, nil
-				},
+				LoadDeployedStub: loadManifestsStub(manifest.Manifests{}, nil),
+				LoadStagedStub:   loadManifestsStub(manifest.Manifests{}, nil),
 			}
 
 			tilesLoader := fakes.FakeTilesLoader{
@@ -217,9 +205,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		It("fails when tile loading fails", func() {
 			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					return manifest.Manifests{}, nil
-				},
+				LoadDeployedStub: loadManifestsStub(manifest.Manifests{}, nil),
+				LoadStagedStub:   loadManifestsStub(manifest.Manifests{}, nil),
 			}
 
 			tilesLoader := fakes.FakeTilesLoader{
@@ -240,12 +227,11 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
 
-				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-					return manifest.Manifests{}, errors.New("loadAll should not be called")
-				},
+				LoadAllDeployedStub: loadAllManifestsStub(manifest.Manifests{}, errors.New("loadAll should not be called")),
+				LoadAllStagedStub:   loadAllManifestsStub(manifest.Manifests{}, errors.New("loadAll should not be called")),
 
-				LoadStub: func(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error) {
-					if status == common.DEPLOYED && reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
+				LoadDeployedStub: func(tileGuids []string) (manifest.Manifests, error) {
+					if reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{
@@ -257,8 +243,11 @@ var _ = Describe("Apply Changes - Execute", func() {
 							},
 						}, nil
 					}
+					return manifest.Manifests{}, errors.New("don't know how to load these manifests")
+				},
+				LoadStagedStub: func(tileGuids []string) (manifest.Manifests, error) {
 
-					if status == common.STAGED && reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
+					if reflect.DeepEqual(tileGuids, []string{"guid1", "guid2"}) {
 						return manifest.Manifests{
 							Data: []manifest.Manifest{
 								{
@@ -270,7 +259,6 @@ var _ = Describe("Apply Changes - Execute", func() {
 							},
 						}, nil
 					}
-
 					return manifest.Manifests{}, errors.New("don't know how to load these manifests")
 				},
 			}
@@ -311,12 +299,8 @@ var _ = Describe("Apply Changes - Execute", func() {
 			}
 
 			manifestsLoader := &applychangesfakes.FakeManifestsLoader{
-				LoadAllStub: func(status common.ProductStatus) (manifest.Manifests, error) {
-					if status == common.DEPLOYED {
-						return deployedManifests, nil
-					}
-					return stagedManifests, nil
-				},
+				LoadAllDeployedStub: loadAllManifestsStub(deployedManifests, nil),
+				LoadAllStagedStub:   loadAllManifestsStub(stagedManifests, nil),
 			}
 
 			tilesLoader := fakes.FakeTilesLoader{}
@@ -348,3 +332,15 @@ var _ = Describe("Apply Changes - Execute", func() {
 	})
 
 })
+
+func loadAllManifestsStub(m manifest.Manifests, err error) func() (manifest.Manifests, error) {
+	return func() (manifest.Manifests, error) {
+		return m, err
+	}
+}
+
+func loadManifestsStub(m manifest.Manifests, err error) func([]string) (manifest.Manifests, error) {
+	return func([]string) (manifest.Manifests, error) {
+		return m, err
+	}
+}

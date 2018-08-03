@@ -2,14 +2,13 @@ package applychanges
 
 import (
 	"fmt"
+	"strings"
 	"time"
 
-	"github.com/pivotal-cloudops/omen/internal/common"
 	"github.com/pivotal-cloudops/omen/internal/diff"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/pivotal-cloudops/omen/internal/userio"
-	"strings"
 )
 
 const applyChangesBody = `{
@@ -26,8 +25,10 @@ type ApplyChangesOptions struct {
 
 //go:generate counterfeiter . manifestsLoader
 type manifestsLoader interface {
-	LoadAll(status common.ProductStatus) (manifest.Manifests, error)
-	Load(status common.ProductStatus, tileGuids []string) (manifest.Manifests, error)
+	LoadAllDeployed() (manifest.Manifests, error)
+	LoadAllStaged() (manifest.Manifests, error)
+	LoadDeployed(tileGuids []string) (manifest.Manifests, error)
+	LoadStaged(tileGuids []string) (manifest.Manifests, error)
 }
 
 type tilesLoader interface {
@@ -168,9 +169,9 @@ func (a *applyChangesOp) makeDiff(tileGuids []string) (string, error) {
 	)
 
 	if len(tileGuids) == 0 {
-		manifestA, err = a.manifestsLoader.LoadAll(common.DEPLOYED)
+		manifestA, err = a.manifestsLoader.LoadAllDeployed()
 	} else {
-		manifestA, err = a.manifestsLoader.Load(common.DEPLOYED, tileGuids)
+		manifestA, err = a.manifestsLoader.LoadDeployed(tileGuids)
 	}
 
 	if err != nil {
@@ -178,9 +179,9 @@ func (a *applyChangesOp) makeDiff(tileGuids []string) (string, error) {
 	}
 
 	if len(tileGuids) == 0 {
-		manifestB, err = a.manifestsLoader.LoadAll(common.STAGED)
+		manifestB, err = a.manifestsLoader.LoadAllStaged()
 	} else {
-		manifestB, err = a.manifestsLoader.Load(common.STAGED, tileGuids)
+		manifestB, err = a.manifestsLoader.LoadStaged(tileGuids)
 	}
 
 	if err != nil {

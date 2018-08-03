@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"fmt"
-
+	"os"
 	"strings"
 
 	"github.com/pivotal-cloudops/omen/internal/applychanges"
 	"github.com/pivotal-cloudops/omen/internal/manifest"
 	"github.com/pivotal-cloudops/omen/internal/tile"
 	"github.com/spf13/cobra"
-	"os"
 )
 
 var nonInteractive bool
@@ -55,10 +54,10 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	}
 
 	options := applychanges.ApplyChangesOptions{
-		TileSlugs: guids,
+		TileSlugs:      guids,
 		NonInteractive: nonInteractive,
-		DryRun: dryRun,
-		Quiet: quiet,
+		DryRun:         dryRun,
+		Quiet:          quiet,
 	}
 	op := applychanges.NewApplyChangesOp(ml, tl, c, rp, options)
 
@@ -69,7 +68,7 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	}
 }
 
-func printMessage(message... string) {
+func printMessage(message ... string) {
 	if quiet {
 		fmt.Fprintln(os.Stderr, message)
 	} else {

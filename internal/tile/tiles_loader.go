@@ -4,8 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"time"
+)
 
-	"github.com/pivotal-cloudops/omen/internal/common"
+type productStatus string
+
+const (
+	staged   productStatus = "staged"
+	deployed productStatus = "deployed"
 )
 
 type omClient interface {
@@ -21,14 +26,14 @@ func NewTilesLoader(omClient omClient) Loader {
 }
 
 func (l Loader) LoadStaged(fetchTileMetadata bool) (Tiles, error) {
-	return l.load(fetchTileMetadata, common.STAGED)
+	return l.load(fetchTileMetadata, staged)
 }
 
 func (l Loader) LoadDeployed(fetchTileMetadata bool) (Tiles, error) {
-	return l.load(fetchTileMetadata, common.DEPLOYED)
+	return l.load(fetchTileMetadata, deployed)
 }
 
-func (l Loader) load(fetchTileMetadata bool, status common.ProductStatus) (Tiles, error) {
+func (l Loader) load(fetchTileMetadata bool, status productStatus) (Tiles, error) {
 	b, err := l.client.Get(fmt.Sprintf("/api/v0/%s/products", status), 10*time.Minute)
 
 	if err != nil {
@@ -53,7 +58,7 @@ func (l Loader) load(fetchTileMetadata bool, status common.ProductStatus) (Tiles
 	return Tiles{data}, nil
 }
 
-func (l Loader) loadTileMetadata(t *Tile, status common.ProductStatus) error {
+func (l Loader) loadTileMetadata(t *Tile, status productStatus) error {
 	urlsToPointer := []struct {
 		url     string
 		pointer *map[string]interface{}
