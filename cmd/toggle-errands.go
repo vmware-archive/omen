@@ -36,7 +36,7 @@ func init() {
 		`(Optional) Set to the errand type that you want to update. Only supported value is "post-deploy"`)
 
 	toggleErrandsCmd.Flags().StringSliceVar(&toggleErrandProducts, "products", []string{},
-		`(Optional) A comma-delimited list of products for errand updates. When omitted, all products will be affected.`)
+		`(Optional) A comma-delimited list of product guids for errand updates. When omitted, all products will be affected.`)
 }
 
 var toggleErrandsFunc = func(*cobra.Command, []string) {
