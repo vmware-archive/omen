@@ -87,6 +87,7 @@ func init() {
 	rootCmd.AddCommand(stemcellUpdatesCmd)
 	rootCmd.AddCommand(errandsCmd)
 	rootCmd.AddCommand(listTilesCmd)
+	rootCmd.AddCommand(guidCmd)
 }
 
 func Execute() {
