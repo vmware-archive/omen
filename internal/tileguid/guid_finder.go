@@ -14,10 +14,10 @@ func FindGuid(tileLoader tileLoader, productSlug string) (string, error) {
 		return "", err
 	}
 
-	tile, err := tiles.FindBySlug(productSlug)
+	foundTile, err := tiles.FindBySlug(productSlug)
 	if err != nil {
 		return "", err
 	}
 
-	return tile.GUID, nil
+	return foundTile.GUID, nil
 }

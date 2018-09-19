@@ -12,16 +12,10 @@ var guidCmd = &cobra.Command{
 	Use:   "tile-guid <product slug>",
 	Short: "Displays the guid for a product",
 	Long:  "Displays the guid for the installed product based on it's slug",
-	Run:   guid,
+	Run:   tileGuid,
 }
 
-// shoud we support multiple products?
-//func init() {
-//	toggleErrandsCmd.Flags().StringSliceVar(&toggleErrandProducts, "products", []string{},
-//		`(Optional) A comma-delimited list of product guids for errand updates. When omitted, all products will be affected.`)
-//}
-
-func guid(_ *cobra.Command, args []string) {
+func tileGuid(_ *cobra.Command, args []string) {
 	client := setupOpsmanClient()
 	tileLoader := tile.NewTilesLoader(client)
 
