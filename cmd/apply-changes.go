@@ -42,19 +42,19 @@ var applyChangesFunc = func(cmd *cobra.Command, args []string) {
 	tl := tile.NewTilesLoader(c)
 	ml := manifest.NewManifestsLoader(c, tl)
 
-	var guids []string
+	var slugs []string
 	if len(products) == 0 {
 		printMessage("Applying changes to all products")
 	} else {
 		printMessage("Applying changes to these products:", products)
 		products = strings.TrimSpace(products)
 		for _, s := range strings.Split(products, ",") {
-			guids = append(guids, strings.TrimSpace(s))
+			slugs = append(slugs, strings.TrimSpace(s))
 		}
 	}
 
 	options := applychanges.ApplyChangesOptions{
-		TileSlugs:      guids,
+		TileSlugs:      slugs,
 		NonInteractive: nonInteractive,
 		DryRun:         dryRun,
 		Quiet:          quiet,
