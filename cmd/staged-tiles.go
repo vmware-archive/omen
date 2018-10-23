@@ -30,7 +30,7 @@ var stagedTilesCmd = &cobra.Command{
 			rp.Fail(err)
 		}
 
-		rp.PrintReport(fmt.Sprintf("tiles written to%s\n", outputDir))
+		rp.PrintReport(fmt.Sprintf("tiles written to %s\n", outputDir))
 	},
 }
 
