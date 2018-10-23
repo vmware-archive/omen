@@ -205,7 +205,7 @@
   revision = "9c0f5ac8553d4e981aec5d24d55f14936bfb7d3c"
 
 [[projects]]
-  digest = "1:419698b0a2531111e8fbde973aeae5639e6d85ee4dcb7bec02ceca56961ebe53"
+  digest = "1:ab47b93cd310f595f4c4bc44bb084eae11f737204d40480b358a555ee1225484"
   name = "github.com/pivotal-cf/om"
   packages = [
     "api",
@@ -217,7 +217,8 @@
     "presenters",
   ]
   pruneopts = ""
-  revision = "af6b0653497cd6d035b5d67aa3d3210f504b6f05"
+  revision = "669ed56768a8fcd4532e30a1af1b53f79ae87cb2"
+  version = "0.35.0"
 
 [[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
@@ -358,12 +359,12 @@
   version = "v1.0.0"
 
 [[projects]]
-  branch = "v2"
-  digest = "1:4b4e5848dfe7f316f95f754df071bebfb40cf4482da62e17e7e1aebdf11f4918"
+  digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
   name = "gopkg.in/yaml.v2"
   packages = ["."]
   pruneopts = ""
-  revision = "d670f9405373e636a5a2765eea47fac0c9bc91a4"
+  revision = "5420a8b6744d3b0345ab293f6fcba19c978f1183"
+  version = "v2.2.1"
 
 [solve-meta]
   analyzer-name = "dep"
