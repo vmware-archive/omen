@@ -36,7 +36,7 @@ func init() {
 		`(Optional) Set to the errand type that you want to update. Only supported value is "post-deploy"`)
 
 	toggleErrandsCmd.Flags().StringSliceVar(&toggleErrandProducts, "products", []string{},
-		`(Optional) A comma-delimited list of product guids for errand updates. When omitted, all products will be affected.`)
+		`(Optional) A comma-delimited list of product guids or names (e.g. p-redis) for errand updates. When omitted, all products will be affected.`)
 }
 
 var toggleErrandsFunc = func(*cobra.Command, []string) {
@@ -52,16 +52,40 @@ var toggleErrandsFunc = func(*cobra.Command, []string) {
 
 	rep := fmt.Sprintf("Action: %s, Errand-Type: %s, Products: %s", errandAction, errandType, products)
 	rp.PrintReport(rep)
+	tl := tile.NewTilesLoader(c)
 
 	if len(toggleErrandProducts) > 0 {
-		err := et.Execute(toggleErrandProducts)
-		if err != nil {
-			rp.Fail(err)
-		}
+		toggleErrandsForProducts(tl, et, toggleErrandProducts)
 	} else {
-		tl := tile.NewTilesLoader(c)
 		toggleAllErrands(tl, et)
 	}
+}
+
+func toggleErrandsForProducts(tl tile.Loader, et errands.ErrandToggler, products []string) {
+	tiles, err := tl.LoadDeployed(false)
+	if err != nil {
+		rp.Fail(errors.New(fmt.Sprintf("Unable to fetch deployed products:\n%#v", err)))
+	}
+
+	tileGUIDs := mapProductNamesOrGUIDsToGUIDs(tiles, products)
+
+	err = et.Execute(tileGUIDs)
+
+	if err != nil {
+		rp.Fail(err)
+	}
+}
+
+func mapProductNamesOrGUIDsToGUIDs(tiles tile.Tiles, products []string) []string {
+	foundTiles, err := tiles.FindBySlugsOrGUIDs(products)
+	if err != nil {
+		rp.Fail(errors.New(fmt.Sprintf("Unable to find products:\n%#v", err)))
+	}
+	tileGUIDs := make([]string, 0)
+	for _, foundTile := range foundTiles {
+		tileGUIDs = append(tileGUIDs, foundTile.GUID)
+	}
+	return tileGUIDs
 }
 
 func newErrandToggler(es api.ErrandsService) errands.ErrandToggler {
