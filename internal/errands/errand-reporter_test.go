@@ -30,21 +30,21 @@ var _ = Describe("ErrandReporter", func() {
 	It("fetches errands for a given product", func() {
 		subject.Execute([]string{"sainthood"})
 
-		productId := es.ListArgsForCall(0)
+		productId := es.ListStagedProductErrandsArgsForCall(0)
 		Expect(productId).To(Equal("sainthood"))
 	})
 
 	It("fetches errands for multiple products", func() {
 		subject.Execute([]string{"an", "interstellar", "space"})
 
-		Expect(es.ListCallCount()).To(Equal(3))
-		Expect(es.ListArgsForCall(0)).To(Equal("an"))
-		Expect(es.ListArgsForCall(1)).To(Equal("interstellar"))
-		Expect(es.ListArgsForCall(2)).To(Equal("space"))
+		Expect(es.ListStagedProductErrandsCallCount()).To(Equal(3))
+		Expect(es.ListStagedProductErrandsArgsForCall(0)).To(Equal("an"))
+		Expect(es.ListStagedProductErrandsArgsForCall(1)).To(Equal("interstellar"))
+		Expect(es.ListStagedProductErrandsArgsForCall(2)).To(Equal("space"))
 	})
 
 	It("Propagates the errand service errors", func() {
-		es.ListReturns(api.ErrandsListOutput{}, errors.New("oh"))
+		es.ListStagedProductErrandsReturns(api.ErrandsListOutput{}, errors.New("oh"))
 
 		err := subject.Execute([]string{"a"})
 
@@ -76,7 +76,7 @@ var _ = Describe("ErrandReporter", func() {
 			},
 		}
 
-		es.ListReturns(errands, nil)
+		es.ListStagedProductErrandsReturns(errands, nil)
 
 		subject.Execute([]string{"jam"})
 
@@ -106,7 +106,7 @@ var _ = Describe("ErrandReporter", func() {
 				},
 			},
 		}
-		es.ListReturns(errands, nil)
+		es.ListStagedProductErrandsReturns(errands, nil)
 
 		subject.Execute([]string{"nuclear"})
 		Expect(string(rp.WriteArgsForCall(3))).To(HavePrefix("spatii\t~\t~"))
@@ -122,7 +122,7 @@ var _ = Describe("ErrandReporter", func() {
 				},
 			},
 		}
-		es.ListReturns(errands, nil)
+		es.ListStagedProductErrandsReturns(errands, nil)
 
 		subject.Execute([]string{"jazz"})
 

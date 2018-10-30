@@ -16,8 +16,8 @@ type errandReporter struct {
 	reporter      tableReporter
 }
 
-func NewErrandReporter(es errandService, rp tableReporter) ErrandReporter {
-	return &errandReporter{errandService: es, reporter: rp}
+func NewErrandReporter(api errandService, rp tableReporter) ErrandReporter {
+	return &errandReporter{errandService: api, reporter: rp}
 }
 
 func (er *errandReporter) Execute(products []string) error {
@@ -25,7 +25,7 @@ func (er *errandReporter) Execute(products []string) error {
 		header := fmt.Sprintf("%s\n%s\n\n", product, strings.Repeat("=", len(product)))
 
 		er.reporter.Write([]byte(header))
-		output, err := er.errandService.List(product)
+		output, err := er.errandService.ListStagedProductErrands(product)
 		if err != nil {
 			return err
 		}

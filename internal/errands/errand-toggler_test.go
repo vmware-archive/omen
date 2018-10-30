@@ -33,16 +33,16 @@ var _ = Describe("Toggle Errands", func() {
 		It("retrieves errand state for only specified products", func() {
 			et.Execute([]string{"PEANUTS-and-butter", "almond-butter"})
 
-			Expect(es.ListCallCount()).To(Equal(2))
-			product1Id := es.ListArgsForCall(0)
+			Expect(es.ListStagedProductErrandsCallCount()).To(Equal(2))
+			product1Id := es.ListStagedProductErrandsArgsForCall(0)
 			Expect(product1Id).To(Equal("PEANUTS-and-butter"))
 
-			product2Id := es.ListArgsForCall(1)
+			product2Id := es.ListStagedProductErrandsArgsForCall(1)
 			Expect(product2Id).To(Equal("almond-butter"))
 		})
 
 		It("fails with error if an invalid product is specified", func() {
-			es.ListReturns(api.ErrandsListOutput{}, errors.New("product not found"))
+			es.ListStagedProductErrandsReturns(api.ErrandsListOutput{}, errors.New("product not found"))
 			err := et.Execute([]string{"PEANUTS-and-butter"})
 
 			Expect(err).To(HaveOccurred())
@@ -79,7 +79,7 @@ var _ = Describe("Toggle Errands", func() {
 				},
 			}
 			BeforeEach(func() {
-				es.ListReturns(errandServiceResponse, nil)
+				es.ListStagedProductErrandsReturns(errandServiceResponse, nil)
 			})
 
 			Describe("disable", func() {
@@ -105,10 +105,10 @@ var _ = Describe("Toggle Errands", func() {
 						output += rp.PrintReportArgsForCall(i)
 					}
 
-					Expect(es.SetStateCallCount()).To(Equal(2))
+					Expect(es.UpdateStagedProductErrandsCallCount()).To(Equal(2))
 
 					for i := range []int{0, 1} {
-						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
+						productName, errandName, postDeployState, preDeleteState := es.UpdateStagedProductErrandsArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(BeFalse())
 
@@ -150,10 +150,10 @@ var _ = Describe("Toggle Errands", func() {
 						output += rp.PrintReportArgsForCall(i)
 					}
 
-					Expect(es.SetStateCallCount()).To(Equal(3))
+					Expect(es.UpdateStagedProductErrandsCallCount()).To(Equal(3))
 
 					for i := range []int{0, 1, 2} {
-						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
+						productName, errandName, postDeployState, preDeleteState := es.UpdateStagedProductErrandsArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(BeTrue())
 
@@ -192,10 +192,10 @@ var _ = Describe("Toggle Errands", func() {
 						output += rp.PrintReportArgsForCall(i)
 					}
 
-					Expect(es.SetStateCallCount()).To(Equal(4))
+					Expect(es.UpdateStagedProductErrandsCallCount()).To(Equal(4))
 
 					for i := range []int{0, 1, 2, 3} {
-						productName, errandName, postDeployState, preDeleteState := es.SetStateArgsForCall(i)
+						productName, errandName, postDeployState, preDeleteState := es.UpdateStagedProductErrandsArgsForCall(i)
 						Expect(productName).To(Equal("PEANUTS-and-butter"))
 						Expect(postDeployState).To(Equal("default"))
 
@@ -214,7 +214,7 @@ var _ = Describe("Toggle Errands", func() {
 				})
 
 				It("propagates the error from the errand service", func() {
-					es.SetStateReturns(errors.New("blah"))
+					es.UpdateStagedProductErrandsReturns(errors.New("blah"))
 
 					err := et.Default().Execute([]string{"PEANUTS-and-butter"})
 					Expect(err).To(HaveOccurred())

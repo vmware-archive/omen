@@ -42,7 +42,9 @@ func init() {
 var toggleErrandsFunc = func(*cobra.Command, []string) {
 	validateFlags()
 	c := setupOpsmanClient()
-	es := api.NewErrandsService(c)
+	es := api.New(api.ApiInput{
+		Client: c,
+	})
 	et := newErrandToggler(es)
 
 	products := "all"
@@ -88,8 +90,8 @@ func mapProductNamesOrGUIDsToGUIDs(tiles tile.Tiles, products []string) []string
 	return tileGUIDs
 }
 
-func newErrandToggler(es api.ErrandsService) errands.ErrandToggler {
-	et := errands.NewErrandToggler(es, rp)
+func newErrandToggler(api api.Api) errands.ErrandToggler {
+	et := errands.NewErrandToggler(api, rp)
 	if errandAction == actionEnable {
 		return et.Enable()
 	} else if errandAction == actionDefault {

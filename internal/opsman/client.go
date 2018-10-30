@@ -23,6 +23,7 @@ type Client struct {
 }
 
 var defaultRequestTimeout = 30 * time.Second
+var defaultConnectTimeout = 5 * time.Second
 
 func NewClient(baseUrl string, username, secret, client, clientSecret string) Client {
 	return Client{baseUrl, username, secret, client, clientSecret}
@@ -42,6 +43,7 @@ func (c Client) execute(method string, endpoint string, data string, timeout tim
 		true,
 		false,
 		t,
+		defaultConnectTimeout,
 	)
 	if err != nil {
 		return []byte(""), err
@@ -51,7 +53,9 @@ func (c Client) execute(method string, endpoint string, data string, timeout tim
 	stdoutLogger := log.New(stdout, "", 0)
 	devNull := ioutil.Discard
 	stderrLogger := log.New(devNull, "", 0)
-	requestService := api.NewRequestService(oAuthClient)
+	requestService := api.New(api.ApiInput{
+		Client: oAuthClient,
+	})
 
 	curlCommand := commands.NewCurl(requestService, stdoutLogger, stderrLogger)
 	switch method {
@@ -90,6 +94,7 @@ func (c Client) Do(request *http.Request) (*http.Response, error) {
 		true,
 		false,
 		defaultRequestTimeout,
+		defaultConnectTimeout,
 	)
 	if err != nil {
 		return nil, err

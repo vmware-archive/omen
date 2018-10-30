@@ -70,7 +70,7 @@ func (et errandToggler) Execute(products []string) error {
 }
 
 func (et errandToggler) updateErrandsForProduct(product string) error {
-	errandsList, err := et.errandService.List(product)
+	errandsList, err := et.errandService.ListStagedProductErrands(product)
 	if err != nil {
 		return err
 	}
@@ -100,7 +100,7 @@ func (et errandToggler) updateErrandsForProduct(product string) error {
 		report := fmt.Sprintf("updating %s to %s", errand.Name, et.action)
 		et.reporter.PrintReport(report)
 
-		err := et.errandService.SetState(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
+		err := et.errandService.UpdateStagedProductErrands(product, errand.Name, et.getErrandStateFlag(), errand.PreDelete)
 		if err != nil {
 			return err
 		}

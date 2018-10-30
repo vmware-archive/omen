@@ -26,8 +26,10 @@ func init() {
 
 var errandsFunc = func(*cobra.Command, []string) {
 	c := setupOpsmanClient()
-	es := api.NewErrandsService(c)
-	et := errands.NewErrandReporter(es, tr)
+	api := api.New(api.ApiInput{
+		Client: c,
+	})
+	et := errands.NewErrandReporter(api, tr)
 	tl := tile.NewTilesLoader(c)
 
 	if len(errandProducts) > 0 {

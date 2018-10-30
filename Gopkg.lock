@@ -26,6 +26,50 @@
   revision = "349dd0209470eabd9514242c688c403c0926d266"
 
 [[projects]]
+  digest = "1:d0cc4a5bd7f183727fa68f58cb969413aaf6cbb8824c36b4fdbd729a4e98c937"
+  name = "github.com/bmatcuk/doublestar"
+  packages = ["."]
+  pruneopts = ""
+  revision = "85a78806aa1b4707d1dbace9be592cf1ece91ab3"
+  version = "v1.1.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:94c865fcab9201eee1bd7bf9423ca056f982871264332c669fcf2e25bb2392cb"
+  name = "github.com/charlievieth/fs"
+  packages = ["."]
+  pruneopts = ""
+  revision = "7dc373669fa10ddf827c37c595dee30a2f001be9"
+
+[[projects]]
+  digest = "1:5a1125cafe887f0ae9e642010e96a7d96e8e5db8babb2f38b1252e5a6ce3e172"
+  name = "github.com/cloudfoundry/bosh-cli"
+  packages = ["director/template"]
+  pruneopts = ""
+  revision = "8366c6fd5cd98b7c9051dc9481f67c88fb8606f9"
+  version = "v5.3.1"
+
+[[projects]]
+  branch = "master"
+  digest = "1:478736c2e9bf890860e357d005ab47c1bd81a9256ff2fa1d189683f1481538b5"
+  name = "github.com/cloudfoundry/bosh-utils"
+  packages = [
+    "errors",
+    "logger",
+    "system",
+  ]
+  pruneopts = ""
+  revision = "15c556314b68953d0449541ded010b033767c805"
+
+[[projects]]
+  branch = "master"
+  digest = "1:4807773e1f31b4b1fdd99e4e91a7612933a9bcd40a4e8f6172bd4ddd25054861"
+  name = "github.com/cppforlife/go-patch"
+  packages = ["patch"]
+  pruneopts = ""
+  revision = "250da0e0e68ce3367b4302f34218f6c064eb9559"
+
+[[projects]]
   digest = "1:eb53021a8aa3f599d29c7102e65026242bdedce998a54837dc67f14b6a97c5fd"
   name = "github.com/fsnotify/fsnotify"
   packages = ["."]
@@ -205,20 +249,25 @@
   revision = "9c0f5ac8553d4e981aec5d24d55f14936bfb7d3c"
 
 [[projects]]
-  digest = "1:ab47b93cd310f595f4c4bc44bb084eae11f737204d40480b358a555ee1225484"
+  digest = "1:e19c82e20613d2fad2605bccb57ffd5953fc3f68a9e555aefa1b9c6e99a350fc"
   name = "github.com/pivotal-cf/om"
   packages = [
     "api",
     "commands",
+    "config",
+    "configparser",
     "extractor",
     "formcontent",
     "models",
     "network",
     "presenters",
+    "progress",
+    "ui",
+    "validator",
   ]
   pruneopts = ""
-  revision = "669ed56768a8fcd4532e30a1af1b53f79ae87cb2"
-  version = "0.35.0"
+  revision = "7fcf10b990803c90917c21b831c589f77c2ef37c"
+  version = "0.42.0"
 
 [[projects]]
   digest = "1:7365acd48986e205ccb8652cc746f09c8b7876030d53710ea6ef7d0bd0dcd7ca"
@@ -357,6 +406,14 @@
   pruneopts = ""
   revision = "150dc57a1b433e64154302bdc40b6bb8aefa313a"
   version = "v1.0.0"
+
+[[projects]]
+  digest = "1:7fcc8921249ff4c90b3022548d6aa8247f4d35729a7aa16ace8ed8f34ba2f352"
+  name = "gopkg.in/cheggaaa/pb.v1"
+  packages = ["."]
+  pruneopts = ""
+  revision = "007b75a044e968336a69a6c0c617251ab62ac14c"
+  version = "v1.0.26"
 
 [[projects]]
   digest = "1:f0620375dd1f6251d9973b5f2596228cc8042e887cd7f827e4220bc1ce8c30e2"
