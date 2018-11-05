@@ -1,6 +1,7 @@
 # OMEN 
 
 ## Installation
+From your $GOPATH dir run `go get github.com/pivotal-cloudops/omen`
 
 Dependencies aren't committed to this repo, but are expected to be fetched with `dep`.
 
