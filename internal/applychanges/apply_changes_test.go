@@ -54,7 +54,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
 		Expect(postedUrl).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+		Expect(postedBody).To(MatchJSON(`{"ignore_warnings": true, "deploy_products": "all"}`))
 	})
 
 	Describe("no changes between staged and deployed", func() {
@@ -83,7 +83,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 			postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
 			Expect(postedUrl).To(Equal("/api/v0/installations"))
-			Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+			Expect(postedBody).To(MatchJSON(`{"ignore_warnings": true, "deploy_products": "all"}`))
 		})
 
 		It("produces a warning for a full run", func() {
@@ -124,7 +124,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 		postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
 		Expect(postedUrl).To(Equal("/api/v0/installations"))
-		Expect(postedBody).To(ContainSubstring(`"deploy_products": "all"`))
+		Expect(postedBody).To(MatchJSON(`{"deploy_products": "all", "ignore_warnings": true}`))
 	})
 
 	It("Prints out the the diff between all staged and deployed tiles", func() {
@@ -180,7 +180,7 @@ var _ = Describe("Apply Changes - Execute", func() {
 
 			postedUrl, postedBody, _ := mockClient.PostArgsForCall(0)
 			Expect(postedUrl).To(Equal("/api/v0/installations"))
-			Expect(postedBody).To(ContainSubstring(`"deploy_products": "guid1,guid2"`))
+			Expect(postedBody).To(MatchJSON(`{"ignore_warnings": true, "deploy_products": ["guid1","guid2"]}`))
 		})
 
 		It("fails when slug not found", func() {

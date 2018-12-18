@@ -1,8 +1,8 @@
 package applychanges
 
 import (
+	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/pivotal-cloudops/omen/internal/diff"
@@ -11,10 +11,10 @@ import (
 	"github.com/pivotal-cloudops/omen/internal/userio"
 )
 
-const applyChangesBody = `{
-    "ignore_warnings": true,
-    "deploy_products": "%s"
-}`
+type applyChangesBody struct {
+	IgnoreWarnings bool        `json:"ignore_warnings"`
+	DeployProducts interface{} `json:"deploy_products"`
+}
 
 type ApplyChangesOptions struct {
 	TileSlugs      []string
@@ -120,12 +120,18 @@ func (a *applyChangesOp) isNotADryRun() bool {
 }
 
 func (a *applyChangesOp) applyChanges(tileGuids []string) error {
-	var body string
+	var guids interface{}
 	if len(tileGuids) == 0 {
-		body = fmt.Sprintf(applyChangesBody, "all")
+		guids = "all"
 	} else {
-		body = fmt.Sprintf(applyChangesBody, strings.Join(tileGuids, ","))
+		guids = tileGuids
 	}
+
+	bytes, err := json.Marshal(applyChangesBody{DeployProducts: guids, IgnoreWarnings: true})
+	if err != nil {
+		return err
+	}
+	body := string(bytes)
 
 	resp, err := a.opsmanClient.Post("/api/v0/installations", body, 10*time.Minute)
 	if err != nil {
