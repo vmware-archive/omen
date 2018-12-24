@@ -7,7 +7,7 @@ import (
 	. "github.com/onsi/gomega"
 )
 
-func TestStemcelldiff(t *testing.T) {
+func TestStemcellDiff(t *testing.T) {
 	RegisterFailHandler(Fail)
 	RunSpecs(t, "Stemcell diff Suite")
 }

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-	)
+)
 
 type stemcellProduct struct {
 	Guid                      string   `json:"guid"`
@@ -48,6 +48,7 @@ type stemcellUpdates struct {
 
 type availableStemcellEntry struct {
 	StemcellVersion string   `json:"stemcell_version"`
+	ReleaseId       int32    `json:"release_id"`
 	Products        []string `json:"products"`
 }
 
@@ -56,11 +57,14 @@ type availableStemcellUpdates struct {
 }
 
 type availableStemcells struct {
-	AvailableStemcells map[string][]string `json:"stemcell_updates"`
+	AvailableStemcells []availableStemcellEntry
 }
 
-func (o *availableStemcells) register(stemcell string, product string) {
-	o.AvailableStemcells[stemcell] = append(o.AvailableStemcells[stemcell], product)
+func (o *availableStemcells) register(stemcell string, products []string, releaseId int32) {
+	if o.AvailableStemcells == nil {
+		o.AvailableStemcells = []availableStemcellEntry{}
+	}
+	o.AvailableStemcells = append(o.AvailableStemcells, availableStemcellEntry{StemcellVersion: stemcell, Products: products, ReleaseId: releaseId})
 }
 
 //go:generate counterfeiter . httpClient
@@ -93,23 +97,22 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 		return err
 	}
 
-	output := &availableStemcells{}
-	output.AvailableStemcells = map[string][]string{}
+	output := &availableStemcells{AvailableStemcells: []availableStemcellEntry{}}
 
 	for _, updateEntry := range updates.StemcellUpdates {
+		unupdatedProducts := []string{}
 		for _, updateProduct := range updateEntry.Products {
 			if assignments.isStemcellDeployedForProduct(updateEntry.StemcellVersion, updateProduct.ProductId) {
 				break
 			}
 
-			output.register(updateEntry.StemcellVersion, updateProduct.ProductId)
+			unupdatedProducts = append(unupdatedProducts, updateProduct.ProductId)
+		}
+		if len(unupdatedProducts) > 0 {
+			output.register(updateEntry.StemcellVersion, unupdatedProducts, updateEntry.ReleaseId)
 		}
 	}
-	a := availableStemcellUpdates{StemcellUpdates: []availableStemcellEntry{}}
-
-	for version, products := range output.AvailableStemcells {
-		a.StemcellUpdates = append(a.StemcellUpdates, availableStemcellEntry{StemcellVersion:version, Products:products})
-	}
+	a := availableStemcellUpdates{StemcellUpdates: output.AvailableStemcells}
 
 	outputBytes, err := json.Marshal(&a)
 	if err != nil {

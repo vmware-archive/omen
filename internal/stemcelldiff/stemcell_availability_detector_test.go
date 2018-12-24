@@ -498,12 +498,14 @@ const (
   "stemcell_updates": [
     {
       "stemcell_version": "3445.48",
+	  "release_id": 106150,
       "products": [
         "pivotal-mysql-6a5d5d6c6c65b5b5d"
       ]
     },
     {
       "stemcell_version": "3468.46",
+	  "release_id": 106153,
       "products": [
         "p-redis-a4de4d5a4bad5",
         "p-healthwatch-876a87d6b6c8f7",
@@ -513,6 +515,7 @@ const (
     },
     {
       "stemcell_version": "3541.30",
+	  "release_id": 106151,
       "products": [
         "cf-97c6b6c7f53d2124"
       ]
@@ -524,6 +527,7 @@ const (
   "stemcell_updates": [
     {
       "stemcell_version": "3468.46",
+	  "release_id": 106153,
       "products": [
         "p-redis-a4de4d5a4bad5",
       	"p-healthwatch-876a87d6b6c8f7"
@@ -553,7 +557,8 @@ var _ = Describe("StemcellAvailabilityDetector", func() {
 		}
 
 		detector := stemcelldiff.NewStemcellUpdateDetector(&client, &rep)
-		detector.DetectMissingStemcells()
+		err := detector.DetectMissingStemcells()
+		Expect(err).NotTo(HaveOccurred())
 		output := rep.PrintReportArgsForCall(0)
 		Expect(output).To(MatchUnorderedJSON(report))
 	},

@@ -16,5 +16,8 @@ var stemcellUpdatesCmd = &cobra.Command{
 var stemcellUpdatesFunc = func(*cobra.Command, []string) {
 	c := setupOpsmanClient()
 	sd := stemcelldiff.NewStemcellUpdateDetector(c, rp)
-	sd.DetectMissingStemcells()
+	err := sd.DetectMissingStemcells()
+	if err != nil {
+		rp.Fail(err)
+	}
 }
