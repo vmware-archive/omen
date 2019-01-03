@@ -498,6 +498,7 @@ const (
   "stemcell_updates": [
     {
       "stemcell_version": "3445.48",
+	  "stemcell_os": "ubuntu-trusty",
 	  "release_id": 106150,
       "products": [
         "pivotal-mysql-6a5d5d6c6c65b5b5d"
@@ -505,6 +506,7 @@ const (
     },
     {
       "stemcell_version": "3468.46",
+	  "stemcell_os": "ubuntu-trusty",
 	  "release_id": 106153,
       "products": [
         "p-redis-a4de4d5a4bad5",
@@ -515,6 +517,7 @@ const (
     },
     {
       "stemcell_version": "3541.30",
+	  "stemcell_os": "ubuntu-trusty",
 	  "release_id": 106151,
       "products": [
         "cf-97c6b6c7f53d2124"
@@ -527,6 +530,7 @@ const (
   "stemcell_updates": [
     {
       "stemcell_version": "3468.46",
+	  "stemcell_os": "ubuntu-trusty",
 	  "release_id": 106153,
       "products": [
         "p-redis-a4de4d5a4bad5",

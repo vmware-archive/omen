@@ -2,6 +2,7 @@ package stemcelldiff
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -48,6 +49,7 @@ type stemcellUpdates struct {
 
 type availableStemcellEntry struct {
 	StemcellVersion string   `json:"stemcell_version"`
+	StemcellOS      string   `json:"stemcell_os"`
 	ReleaseId       int32    `json:"release_id"`
 	Products        []string `json:"products"`
 }
@@ -60,11 +62,16 @@ type availableStemcells struct {
 	AvailableStemcells []availableStemcellEntry
 }
 
-func (o *availableStemcells) register(stemcell string, products []string, releaseId int32) {
+func (o *availableStemcells) register(stemcellVersion string, stemcellOS string, products []string, releaseId int32) {
 	if o.AvailableStemcells == nil {
 		o.AvailableStemcells = []availableStemcellEntry{}
 	}
-	o.AvailableStemcells = append(o.AvailableStemcells, availableStemcellEntry{StemcellVersion: stemcell, Products: products, ReleaseId: releaseId})
+	o.AvailableStemcells = append(o.AvailableStemcells, availableStemcellEntry{
+		StemcellVersion: stemcellVersion,
+		StemcellOS:      stemcellOS,
+		Products:        products,
+		ReleaseId:       releaseId,
+	})
 }
 
 //go:generate counterfeiter . httpClient
@@ -109,7 +116,12 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 			unupdatedProducts = append(unupdatedProducts, updateProduct.ProductId)
 		}
 		if len(unupdatedProducts) > 0 {
-			output.register(updateEntry.StemcellVersion, unupdatedProducts, updateEntry.ReleaseId)
+			output.register(
+				updateEntry.StemcellVersion,
+				assignments.findStemcellOS(updateEntry.StemcellVersion),
+				unupdatedProducts,
+				updateEntry.ReleaseId,
+			)
 		}
 	}
 	a := availableStemcellUpdates{StemcellUpdates: output.AvailableStemcells}
@@ -185,4 +197,13 @@ func (s *stemcellAssignments) isStemcellDeployedForProduct(stemcellVersion strin
 		}
 	}
 	return false
+}
+
+func (s *stemcellAssignments) findStemcellOS(stemcellVersion string) string {
+	for _, stemcell := range s.StemcellLibrary {
+		if stemcell.Version == stemcellVersion {
+			return stemcell.Os
+		}
+	}
+	panic(fmt.Sprintf("could not find the stemcell OS for the stemcell version %s - this might indicate a bug or change on OpsManager API", stemcellVersion))
 }
