@@ -2,7 +2,6 @@ package stemcelldiff
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
 	"net/http"
 )
@@ -20,31 +19,22 @@ type stemcellProduct struct {
 	RequiredStemcellOs        string   `json:"required_stemcell_os"`
 }
 
-type stemcellLibraryEntry struct {
-	Version        string `json:"version"`
-	Os             string `json:"os"`
-	Infrastructure string `json:"infrastructure"`
-	Hypervisor     string `json:"hypervisor"`
-	Light          bool   `json:"light"`
-}
-
-type stemcellAssignments struct {
+type omStemcellAssignments struct {
 	Products        []stemcellProduct      `json:"products"`
-	StemcellLibrary []stemcellLibraryEntry `json:"stemcell_library"`
 }
 
-type stemcellUpdateProductEntry struct {
+type omProductEntry struct {
 	ProductId string `json:"product_id"`
 }
 
-type stemcellUpdateEntry struct {
-	StemcellVersion string                       `json:"stemcell_version"`
-	ReleaseId       int32                        `json:"release_id"`
-	Products        []stemcellUpdateProductEntry `json:"products"`
+type omStemcellUpdateEntry struct {
+	StemcellVersion string           `json:"stemcell_version"`
+	ReleaseId       int32            `json:"release_id"`
+	Products        []omProductEntry `json:"products"`
 }
 
-type stemcellUpdates struct {
-	StemcellUpdates []stemcellUpdateEntry `json:"stemcell_updates"`
+type omStemcellUpdates struct {
+	StemcellUpdates []omStemcellUpdateEntry `json:"stemcell_updates"`
 }
 
 type availableStemcellEntry struct {
@@ -94,39 +84,24 @@ func NewStemcellUpdateDetector(client httpClient, r reporter) StemcellUpdateDete
 }
 
 func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
-	assignments, err := s.getStemcellAssignments()
-	if err != nil {
-		return err
-	}
 
 	updates, err := s.getStemcellUpdates()
 	if err != nil {
 		return err
 	}
 
-	output := &availableStemcells{AvailableStemcells: []availableStemcellEntry{}}
-
-	for _, updateEntry := range updates.StemcellUpdates {
-		unupdatedProducts := []string{}
-		for _, updateProduct := range updateEntry.Products {
-			if assignments.isStemcellDeployedForProduct(updateEntry.StemcellVersion, updateProduct.ProductId) {
-				break
-			}
-
-			unupdatedProducts = append(unupdatedProducts, updateProduct.ProductId)
-		}
-		if len(unupdatedProducts) > 0 {
-			output.register(
-				updateEntry.StemcellVersion,
-				assignments.findStemcellOS(updateEntry.StemcellVersion),
-				unupdatedProducts,
-				updateEntry.ReleaseId,
-			)
+	var assignments omStemcellAssignments
+	if len(updates.StemcellUpdates) > 0 {
+		assignments, err = s.getStemcellAssignments()
+		if err != nil {
+			return err
 		}
 	}
-	a := availableStemcellUpdates{StemcellUpdates: output.AvailableStemcells}
 
-	outputBytes, err := json.Marshal(&a)
+	stemcells := enhanceStemcellUpgrades(updates, assignments)
+	outputBytes, err := json.Marshal(
+		&availableStemcellUpdates{StemcellUpdates: stemcells.AvailableStemcells},
+	)
 	if err != nil {
 		return err
 	}
@@ -136,32 +111,55 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 	return nil
 }
 
-func (s *StemcellUpdateDetector) getStemcellUpdates() (stemcellUpdates, error) {
+func enhanceStemcellUpgrades(omUpdates omStemcellUpdates, assignments omStemcellAssignments) availableStemcells  {
+	stemcells := availableStemcells{AvailableStemcells: []availableStemcellEntry{}}
+
+	for _, updateEntry := range omUpdates.StemcellUpdates {
+		stemcells.register(
+			updateEntry.StemcellVersion,
+			assignments.findStemcellOS(updateEntry.Products[0].ProductId),
+			productIds(updateEntry),
+			updateEntry.ReleaseId,
+		)
+	}
+
+	return stemcells
+}
+
+func productIds(updateEntry omStemcellUpdateEntry) []string {
+	unupdatedProducts := []string{}
+	for _, updateProduct := range updateEntry.Products {
+		unupdatedProducts = append(unupdatedProducts, updateProduct.ProductId)
+	}
+	return unupdatedProducts
+}
+
+func (s *StemcellUpdateDetector) getStemcellUpdates() (omStemcellUpdates, error) {
 	availableStemcellsPath := "/api/v0/pivotal_network/stemcell_updates"
 	availableStemcells, err := s.getContentForOmPath(availableStemcellsPath)
 	if err != nil {
-		return stemcellUpdates{}, err
+		return omStemcellUpdates{}, err
 	}
 
-	var latestStemcells stemcellUpdates
+	var latestStemcells omStemcellUpdates
 	err = json.Unmarshal(availableStemcells, &latestStemcells)
 	if err != nil {
-		return stemcellUpdates{}, err
+		return omStemcellUpdates{}, err
 	}
 
 	return latestStemcells, nil
 }
 
-func (s *StemcellUpdateDetector) getStemcellAssignments() (stemcellAssignments, error) {
+func (s *StemcellUpdateDetector) getStemcellAssignments() (omStemcellAssignments, error) {
 	availableStemcellsPath := "/api/v0/stemcell_assignments"
 	availableStemcells, err := s.getContentForOmPath(availableStemcellsPath)
 	if err != nil {
-		return stemcellAssignments{}, err
+		return omStemcellAssignments{}, err
 	}
-	var latestStemcells stemcellAssignments
+	var latestStemcells omStemcellAssignments
 	err = json.Unmarshal(availableStemcells, &latestStemcells)
 	if err != nil {
-		return stemcellAssignments{}, err
+		return omStemcellAssignments{}, err
 	}
 
 	return latestStemcells, nil
@@ -190,20 +188,11 @@ func (s *StemcellUpdateDetector) getContentForOmPath(path string) ([]byte, error
 	return reply, nil
 }
 
-func (s *stemcellAssignments) isStemcellDeployedForProduct(stemcellVersion string, productId string) bool {
+func (s *omStemcellAssignments) findStemcellOS(productId string) string {
 	for _, product := range s.Products {
-		if product.DeployedStemcellVersion == stemcellVersion && product.Guid == productId {
-			return true
+		if product.Guid == productId {
+			return product.RequiredStemcellOs
 		}
 	}
-	return false
-}
-
-func (s *stemcellAssignments) findStemcellOS(stemcellVersion string) string {
-	for _, stemcell := range s.StemcellLibrary {
-		if stemcell.Version == stemcellVersion {
-			return stemcell.Os
-		}
-	}
-	panic(fmt.Sprintf("could not find the stemcell OS for the stemcell version %s - this might indicate a bug or change on OpsManager API", stemcellVersion))
+	return "undefined_stemcell_os"
 }
