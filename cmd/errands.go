@@ -10,7 +10,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var errandProducts []string
+var errandProductSlugs []string
 
 var errandsCmd = &cobra.Command{
 	Use:   "errands",
@@ -20,7 +20,7 @@ var errandsCmd = &cobra.Command{
 }
 
 func init() {
-	errandsCmd.Flags().StringSliceVar(&errandProducts, "products", []string{},
+	errandsCmd.Flags().StringSliceVar(&errandProductSlugs, "products", []string{},
 		`(Optional) A comma-delimited list of products for errand updates. When omitted, all products will be affected.`)
 }
 
@@ -32,8 +32,8 @@ var errandsFunc = func(*cobra.Command, []string) {
 	et := errands.NewErrandReporter(api, tr)
 	tl := tile.NewTilesLoader(c)
 
-	if len(errandProducts) > 0 {
-		guids, err := mapGuid(tl, errandProducts)
+	if len(errandProductSlugs) > 0 {
+		guids, err := mapGuid(tl, errandProductSlugs)
 
 		if err != nil {
 			rp.Fail(err)
@@ -49,11 +49,15 @@ var errandsFunc = func(*cobra.Command, []string) {
 	}
 }
 
-func mapGuid(tl tile.Loader, productNames []string) ([]string, error) {
+func mapGuid(tl tile.Loader, productSlugs []string) ([]string, error) {
 	var guids []string
 	deployedProducts, err := tl.LoadDeployed(false)
-	for _, product := range productNames {
-		_tile, err := deployedProducts.FindBySlug(product)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, productSlug := range productSlugs {
+		_tile, err := deployedProducts.FindBySlug(productSlug)
 		if err != nil {
 			return nil, err
 		}

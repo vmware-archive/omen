@@ -61,22 +61,22 @@ func init() {
 	rootCmd.PersistentFlags().BoolVarP(&forceLogout, "force-logout", "f", false,
 		"(optional) Log all other users out of opsman before attempting action")
 
-	viper.BindPFlag(keyTarget, rootCmd.PersistentFlags().Lookup("target"))
-	viper.BindEnv(keyTarget, envOpsmanHost)
+	_ = viper.BindPFlag(keyTarget, rootCmd.PersistentFlags().Lookup("target"))
+	_ = viper.BindEnv(keyTarget, envOpsmanHost)
 
-	viper.BindPFlag(keyUser, rootCmd.PersistentFlags().Lookup("username"))
-	viper.BindEnv(keyUser, envOpsmanUsername)
+	_ = viper.BindPFlag(keyUser, rootCmd.PersistentFlags().Lookup("username"))
+	_ = viper.BindEnv(keyUser, envOpsmanUsername)
 
-	viper.BindPFlag(keyPassword, rootCmd.PersistentFlags().Lookup("password"))
-	viper.BindEnv(keyPassword, envOpsmanPassword)
+	_ = viper.BindPFlag(keyPassword, rootCmd.PersistentFlags().Lookup("password"))
+	_ = viper.BindEnv(keyPassword, envOpsmanPassword)
 
-	viper.BindPFlag(keyClientId, rootCmd.PersistentFlags().Lookup("client-id"))
-	viper.BindEnv(keyClientId, envOpsmanClientId)
+	_ = viper.BindPFlag(keyClientId, rootCmd.PersistentFlags().Lookup("client-id"))
+	_ = viper.BindEnv(keyClientId, envOpsmanClientId)
 
-	viper.BindPFlag(keyClientSecret, rootCmd.PersistentFlags().Lookup("client-secret"))
-	viper.BindEnv(keyClientSecret, envOpsmanClientSecret)
+	_ = viper.BindPFlag(keyClientSecret, rootCmd.PersistentFlags().Lookup("client-secret"))
+	_ = viper.BindEnv(keyClientSecret, envOpsmanClientSecret)
 
-	viper.BindPFlag(keyForceLogout, rootCmd.PersistentFlags().Lookup("force-logout"))
+	_ = viper.BindPFlag(keyForceLogout, rootCmd.PersistentFlags().Lookup("force-logout"))
 
 	rootCmd.AddCommand(versionCmd)
 	rootCmd.AddCommand(diagnosticsCmd)
