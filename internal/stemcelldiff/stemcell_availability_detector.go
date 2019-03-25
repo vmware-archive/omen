@@ -2,8 +2,11 @@ package stemcelldiff
 
 import (
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"reflect"
+	"strings"
 )
 
 type stemcellProduct struct {
@@ -20,7 +23,7 @@ type stemcellProduct struct {
 }
 
 type omStemcellAssignments struct {
-	Products        []stemcellProduct      `json:"products"`
+	Products []stemcellProduct `json:"products"`
 }
 
 type omProductEntry struct {
@@ -37,11 +40,16 @@ type omStemcellUpdates struct {
 	StemcellUpdates []omStemcellUpdateEntry `json:"stemcell_updates"`
 }
 
+type availableStemcellProduct struct {
+	GUID string `json:"guid"`
+	Slug string `json:"slug"`
+}
+
 type availableStemcellEntry struct {
-	StemcellVersion string   `json:"stemcell_version"`
-	StemcellOS      string   `json:"stemcell_os"`
-	ReleaseId       int32    `json:"release_id"`
-	Products        []string `json:"products"`
+	StemcellVersion string                     `json:"stemcell_version"`
+	StemcellOS      string                     `json:"stemcell_os"`
+	ReleaseId       int32                      `json:"release_id"`
+	Products        []availableStemcellProduct `json:"products"`
 }
 
 type availableStemcellUpdates struct {
@@ -52,7 +60,7 @@ type availableStemcells struct {
 	AvailableStemcells []availableStemcellEntry
 }
 
-func (o *availableStemcells) register(stemcellVersion string, stemcellOS string, products []string, releaseId int32) {
+func (o *availableStemcells) register(stemcellVersion string, stemcellOS string, products []availableStemcellProduct, releaseId int32) {
 	if o.AvailableStemcells == nil {
 		o.AvailableStemcells = []availableStemcellEntry{}
 	}
@@ -111,14 +119,14 @@ func (s *StemcellUpdateDetector) DetectMissingStemcells() error {
 	return nil
 }
 
-func enhanceStemcellUpgrades(omUpdates omStemcellUpdates, assignments omStemcellAssignments) availableStemcells  {
+func enhanceStemcellUpgrades(omUpdates omStemcellUpdates, assignments omStemcellAssignments) availableStemcells {
 	stemcells := availableStemcells{AvailableStemcells: []availableStemcellEntry{}}
 
 	for _, updateEntry := range omUpdates.StemcellUpdates {
 		stemcells.register(
 			updateEntry.StemcellVersion,
 			assignments.findStemcellOS(updateEntry.Products[0].ProductId),
-			productIds(updateEntry),
+			products(updateEntry, assignments),
 			updateEntry.ReleaseId,
 		)
 	}
@@ -126,10 +134,13 @@ func enhanceStemcellUpgrades(omUpdates omStemcellUpdates, assignments omStemcell
 	return stemcells
 }
 
-func productIds(updateEntry omStemcellUpdateEntry) []string {
-	unupdatedProducts := []string{}
+func products(updateEntry omStemcellUpdateEntry, assignments omStemcellAssignments) []availableStemcellProduct {
+	unupdatedProducts := []availableStemcellProduct{}
 	for _, updateProduct := range updateEntry.Products {
-		unupdatedProducts = append(unupdatedProducts, updateProduct.ProductId)
+		unupdatedProducts = append(unupdatedProducts, availableStemcellProduct{
+			GUID: updateProduct.ProductId,
+			Slug: assignments.findProductSlug(updateProduct.ProductId),
+		})
 	}
 	return unupdatedProducts
 }
@@ -189,10 +200,19 @@ func (s *StemcellUpdateDetector) getContentForOmPath(path string) ([]byte, error
 }
 
 func (s *omStemcellAssignments) findStemcellOS(productId string) string {
+	return s.findField(productId, "RequiredStemcellOs")
+
+}
+
+func (s *omStemcellAssignments) findProductSlug(productId string) string {
+	return s.findField(productId, "Identifier")
+}
+
+func (s *omStemcellAssignments) findField(productId string, fieldName string) string {
 	for _, product := range s.Products {
 		if product.Guid == productId {
-			return product.RequiredStemcellOs
+			return reflect.Indirect(reflect.ValueOf(product)).FieldByName(fieldName).String()
 		}
 	}
-	return "undefined_stemcell_os"
+	return fmt.Sprintf("undefined_%s", strings.ToLower(fieldName))
 }

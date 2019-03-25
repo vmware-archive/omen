@@ -53,18 +53,22 @@ const (
     "products": [
       {
         "guid": "p-bosh-7d6f7d6b6c2d3b2a3",
+  		"identifier": "p-bosh",
         "required_stemcell_os": "ubuntu-trusty"
       },
       {
         "guid": "p-redis-a4de4d5a4bad5",
+  		"identifier": "p-redis",
         "required_stemcell_os": "ubuntu-trusty"
       },
       {
         "guid": "p-healthwatch-a4de4d5a4bad5",
+  		"identifier": "p-healthwatch",
         "required_stemcell_os": "ubuntu-trusty"
       },
       {
         "guid": "cf-97c6b6c7f53d2124",
+  		"identifier": "elastic-runtime",
         "required_stemcell_os": "ubuntu-xenial"
       }
     ]
@@ -77,7 +81,10 @@ const (
 	  "stemcell_os": "ubuntu-trusty",
 	  "release_id": 106153,
       "products": [
-        "p-redis-a4de4d5a4bad5"
+        {
+		  "guid": "p-redis-a4de4d5a4bad5",
+		  "slug": "p-redis"
+		}
       ]
     },
     {
@@ -85,7 +92,10 @@ const (
 	  "stemcell_os": "ubuntu-xenial",
 	  "release_id": 106151,
       "products": [
-        "cf-97c6b6c7f53d2124"
+		{
+          "guid": "cf-97c6b6c7f53d2124",
+          "slug": "elastic-runtime"
+		}
       ]
     }
   ]
